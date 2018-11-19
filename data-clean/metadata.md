@@ -1,1 +1,1 @@
-Metadata for all [clean datasets](data-clean) will be added here shortly.
+Metadata for all clean datasets will be added here shortly.
