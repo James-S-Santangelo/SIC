@@ -3,6 +3,11 @@ library(tidyverse)
 # Load in experimental data from Commond Garden
 experimentalData <- read.csv("data-raw/experimentalData_commonGarden.csv", na = c("", "NA", "#NUM!"))
 
+# Load in data with number of flowers and seeds for infividual plants
+flwrSeedData <- read_csv("data-raw/flwrSeedRatio_commonGardenPlants.csv", na = c("", "NA", "#NUM!")) %>%
+  select(label, Row, Column, Num_flwr_R1, Num_Seeds_R1, Num_flwr_R2, Num_Seeds_R2) %>%
+  filter_all(any_vars(!is.na(.)))
+
 # Load in data with masses for bags and envelopes that held reproductive and vegetative biomass
 bagEnv_Masses <- read_csv("data-raw/bagMasses.csv")
 
@@ -33,6 +38,13 @@ experimentalData_modified <- experimentalData %>%
          "Reprod_biomass_withEnv" = "weigth_flowers.bag",
          "Veget_biomass_withBag" = "weigth_plant.bag") %>%
   
+  # Merge with flwr/seed count dataset
+  left_join(., flwrSeedData, by = c("label", "Row", "Column")) %>%
+  
+  # Define number of seeds per flower
+  mutate(Seeds_per_flower1 = Num_Seeds_R1 / Num_flwr_R1,
+         Seeds_per_flower2 = Num_Seeds_R2 / Num_flwr_R2) %>%
+  
   # Calculate means of traits with multiple measurements for individual plants
   mutate(Reprod_biomass = Reprod_biomass_withEnv - envMass,
          Veget_biomass = Veget_biomass_withBag - bagMass,
@@ -43,13 +55,15 @@ experimentalData_modified <- experimentalData %>%
          Avg_num_flwrs = select(., starts_with("Num_flwrs")) %>% rowMeans(na.rm = TRUE),
          Avg_leaf_wdth= select(., starts_with("width_leaf")) %>% rowMeans(na.rm = TRUE),
          Avg_leaf_lgth = select(., starts_with("length_leaf")) %>% rowMeans(na.rm = TRUE),
-         Avg_stolon_thick = select(., starts_with("Width_stolon")) %>% rowMeans(na.rm = TRUE)) %>%
+         Avg_stolon_thick = select(., starts_with("Width_stolon")) %>% rowMeans(na.rm = TRUE),
+         Avg_seeds_per_flower = select(., starts_with("Seeds_per")) %>% rowMeans(na.rm = TRUE)) %>%
   
   # Select columns that will be used for analyses
   select(Population, Family_ID, Seed, label, Time_to_germination, Row, Column, 
          Days_to_flower, Num_Inf, HCN_Results, Reprod_biomass, Veget_biomass,
          Avg_bnr_wdth, Avg_bnr_lgth, Avg_petiole_lgth, Avg_peducle_lgth, 
-         Avg_num_flwrs, Avg_leaf_wdth, Avg_leaf_lgth, Avg_stolon_thick) %>%
+         Avg_num_flwrs, Avg_leaf_wdth, Avg_leaf_lgth, Avg_stolon_thick,
+         Avg_seeds_per_flower) %>%
   
   # Reprod_biomass and num_flwrs should be 0 if plant never flowered, not NA
   mutate(Reprod_biomass = ifelse(Num_Inf == 0, 0, Reprod_biomass),
@@ -57,16 +71,7 @@ experimentalData_modified <- experimentalData %>%
   
   # Replace NaN with NA
   na_if("NaN")
-
-# Load in data with number of flowers and seeds for infividual plants
-flwrSeedData <- read_csv("data-raw/flwrSeedRatio_commonGardenPlants.csv", na = c("", "NA", "#NUM!")) %>%
-  select(label, Row, Column, Num_flwr_R1, Num_Seeds_R1, Num_flwr_R2, Num_Seeds_R2) %>%
-  filter_all(any_vars(!is.na(.)))
-
-# Merge experimental data with flower/seed ratio data by label
-experimentalData_modified <- experimentalData_modified %>%
-  left_join(., flwrSeedData, by = c("label"))
-
+  
 # Load in data with lat/longs
 latLongs <- read_csv("data-raw/populationLatLongs.csv")
 
