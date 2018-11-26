@@ -3,11 +3,17 @@ library(tidyverse)
 # Load in flwr/seed data from field-collected inflorescences
 flwrSeedFieldData <- read_csv("data-raw/flwrSeedRatio_fieldPlants.csv", na = c("", "NA"))
 
-# Create population mean seed to flower ratio data
-seedFlwrRatio_popMeans <- flwrSeedFieldData %>%
+# Create clean data with all individuals
+seedFlwrRatio_cleaned <- flwrSeedFieldData %>%
   
   # Keep only rows with no comments. Comments represent missing/poor observations (N = 4)
-  filter(is.na(Comments)) %>%
+  filter(is.na(Comments))
+  
+# Write clean data to disk
+write.csv(seedFlwrRatio_cleaned, "data-clean/flwrSeedRatio_fieldPlants_cleaned.csv")
+  
+# Creat population mean dataset
+seedFlwrRatio_popMeans <- seedFlwrRatio_cleaned %>%
   
   # Define number of seeds per flower
   mutate(Seeds_per_flower = Num.Seeds / Num.Flwrs) %>%
@@ -40,4 +46,4 @@ seedFlwrRatio_popMeans <- seedFlwrRatio_popMeans %>%
   mutate(Distance_to_core = haversine(Longitude, Latitude, long_city, lat_city))
   
 # Write data
-write_csv(seedFlwrRatio_popMeans, "data-clean/seedFlowerRatio_fieldData.csv")
+write_csv(seedFlwrRatio_popMeans, "data-clean/seedFlowerRatio_popMeans_fieldData.csv")
