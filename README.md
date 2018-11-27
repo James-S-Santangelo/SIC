@@ -6,4 +6,6 @@ This repo contains code and data associated with a project testing the effects o
 1. Does urbanization alter relative investment in sexual vs. asexual reproduction?
 2. Is urbanization associated with variation in plant phenological and reproductive traits?
 
+A link to the manuscript draft can be found [here](https://drive.google.com/open?id=1z9E_8xINdq6beYTk8mx-1OwtHeEA8vIA)
+
 More soon...
