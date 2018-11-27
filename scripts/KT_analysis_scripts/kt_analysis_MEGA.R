@@ -42,6 +42,8 @@ familymeans.cg <- indplant.cg %>%
 
 Data.MatrixTrait <- indplant.cg[,c(5, 12, 14)]
 
+
+
 sc <- rda(Data.MatrixTrait ~ Distance_to_core, data = indplant.cg, scale = T)
 
 # str(sc)
@@ -126,4 +128,53 @@ SeedFlwr.Ratio.Field <- ggplot(seeddata.field.popmean, aes(x = PolVis, y = Seeds
   geom_smooth(method = lm, se = T) +
   theme_KT
 SeedFlwr.Ratio.Field
+
+
+### G-matrix evolution
+
+# look at the variance of each trait along the gradient
+PopMean.Var <- indplant.cg %>% 
+  group_by(Population) %>% 
+  summarise_all(funs(var(., na.rm = TRUE)))
+
+PopMean.Var$Distance_to_core <- popmean.cg$Distance_to_core
+ 
+# [1] "Population"           "Family_ID"            "Seed"                 "label"                "Time_to_germination"  "Row"                  "Column"              
+# [8] "Days_to_flower"       "Num_Inf"              "HCN_Results"          "Reprod_biomass"       "Veget_biomass"        "Avg_bnr_wdth"         "Avg_bnr_lgth"        
+# [15] "Avg_petiole_lgth"     "Avg_peducle_lgth"     "Avg_num_flwrs"        "Avg_leaf_wdth"        "Avg_leaf_lgth"        "Avg_stolon_thick"     "Avg_seeds_per_flower"
+# [22] "Latitude"             "Longitude"            "Distance_to_core"     "Distance_to_cg"     
+
+
+summary(lm(Days_to_flower ~ Distance_to_core, data = familymeans.cg))
+
+plot <-
+  ggplot(familymeans.cg, aes(x = Distance_to_core, y = Days_to_flower)) +
+  geom_point(alpha = 1) +
+  labs(x = "source population distance\nto urban centre (km)",
+       y = "var(vegetative biomass [g])") +
+  geom_smooth(method = lm, se = T) +
+  theme_KT
+plot
+
+# ggsave(filename = "analysis/kt_figures/genetic_variance/vegbio.pdf", plot = plot, height = 3, width = 3)
+
+# # summaries by grouped pops
+# five.urb.pops <- familymeans.cg %>% 
+#   ungroup() %>% 
+#   filter(Population <= 5) %>% 
+#   select(Time_to_germination, Days_to_flower:Avg_stolon_thick)
+#   
+# 
+# five.rur.pops <- familymeans.cg %>% 
+#   ungroup() %>% 
+#   filter(Population >= 22) %>% 
+#   select(Time_to_germination, Days_to_flower:Avg_stolon_thick) 
+# 
+# View(diag(cov(five.urb.pops) - cov(five.rur.pops)))
+# 
+# cov(five.rur.pops)
+# 
+# cov(five.urb.pops)
+
+
   
