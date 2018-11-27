@@ -145,7 +145,7 @@ PopMean.Var$Distance_to_core <- popmean.cg$Distance_to_core
 # [22] "Latitude"             "Longitude"            "Distance_to_core"     "Distance_to_cg"     
 
 
-summary(lm(Days_to_flower ~ Distance_to_core, data = familymeans.cg))
+summary(lm(Avg_seeds_per_flower ~ Distance_to_core, data = indplant))
 
 plot <-
   ggplot(familymeans.cg, aes(x = Distance_to_core, y = Days_to_flower)) +
