@@ -2,6 +2,8 @@
 # sex in city
 
 # load packages
+library(lme4)
+library(lmerTest)
 library(psych)
 library(tidyverse)
 library(vegan)
@@ -33,18 +35,32 @@ theme_KT <- theme(aspect.ratio=1.0,panel.background = element_blank(),
                   plot.title = element_text(hjust=0))
 
 # generate data frame of FAMILY_MEANS
-familymeans.cg <- indplant.cg %>% 
+
+indplant.cg2 <- indplant.cg %>% 
+  mutate(Rel_Sex_Asex = (Reprod_biomass / Veget_biomass)) %>% 
+  mutate(Fraction_Biomass_Sex = Reprod_biomass / (Veget_biomass + Reprod_biomass))
+
+familymeans.cg <- indplant.cg2 %>% 
   group_by(Population, Family_ID) %>% 
+  summarise_all(funs(mean(., na.rm = TRUE)))
+
+popmean.cg2 <- familymeans.cg %>% 
+  ungroup() %>% 
+  group_by(Population) %>% 
   summarise_all(funs(mean(., na.rm = TRUE)))
 
 # multivariate cline analysis
 # trying the CCA method stinch used
 
-Data.MatrixTrait <- indplant.cg[,c(5, 12, 14)]
+# Data.MatrixTrait <- indplant.cg[,c(5, 12, 14)]
 
 
 
-sc <- rda(Data.MatrixTrait ~ Distance_to_core, data = indplant.cg, scale = T)
+# sc <- rda(Data.MatrixTrait ~ Distance_to_core, data = indplant.cg, scale = T)
+
+# trying a few analyses
+
+summary(lm(Fraction_Biomass_Sex ~ Distance_to_core * Distance_to_cg, data = familymeans.cg))
 
 # str(sc)
 # 
@@ -118,16 +134,18 @@ Stolon.Thick <- ggplot(indplant.cg2, aes(x = Distance_to_core, y = did.flower)) 
 Stolon.Thick
 
 
+familymeans.cg
+summary(lm((Fraction_Biomass_Sex ~ Distance_to_core, data = popmean.cg2))
 
-summary(lm((Reprod_biomass) ~ Distance_to_core, data = popmean.cg))
-
-SeedFlwr.Ratio.Field <- ggplot(seeddata.field.popmean, aes(x = PolVis, y = Seeds_per_flower)) +
+# test of hypothesis that pops invest differently into sex in field
+SeedFlwr.Ratio.Field <- ggplot(popmean.cg2, aes(x = Distance_to_core, y = Fraction_Biomass_Sex)) +
   geom_point(alpha = 1) +
   labs(x = "source population distance\nto urban centre (km)",
-       y = "number of seeds per flower") +
+       y = "investment into sex / asex") +
   geom_smooth(method = lm, se = T) +
   theme_KT
 SeedFlwr.Ratio.Field
+
 
 
 ### G-matrix evolution
