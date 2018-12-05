@@ -72,6 +72,9 @@ experimentalData_modified <- experimentalData %>%
   # Replace NaN with NA
   na_if("NaN")
   
+# Replace incorrect reproductive biomass (which was negative) with value from re-weighing
+experimentalData_modified[experimentalData_modified$label == "6-6-3", "Reprod_biomass"] <- 0.8041
+
 # Load in data with lat/longs
 latLongs <- read_csv("data-raw/populationLatLongs.csv")
 

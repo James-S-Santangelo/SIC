@@ -1,16 +1,17 @@
 # install packages
 # install.packages("lme4")
 # install.packages("lmerTest")
+# install.packages("tidyverse")
 
 # Load require packages
 library(lme4)
 library(lmerTest)
+library(tidyverse)
 
 #### MODELS FOR TRAIT CHANGE WITH URBANIZATION: ALL DATA ####
 
 # Load in family means dataset
 commonGardenData <- read_csv("data-clean/experimentalData_individualPlants.csv")
-
 
 ## MODELS ##
 
