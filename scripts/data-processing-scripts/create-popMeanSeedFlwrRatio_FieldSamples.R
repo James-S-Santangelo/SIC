@@ -6,6 +6,12 @@ flwrSeedFieldData <- read_csv("data-raw/flwrSeedRatio_fieldPlants.csv", na = c("
 # Create clean data with all individuals
 seedFlwrRatio_cleaned <- flwrSeedFieldData %>%
   
+  # Add in data first first individual in population 1 that was lost due to interruption
+  # at field site.
+  mutate(Num.Flwrs = replace(Num.Flwrs, Population == 1 & Individual == 1, 20),
+         Num.Seeds = replace(Num.Seeds, Population == 1 & Individual == 1, 21),
+         Comments = replace(Comments, Population == 1 & Individual == 1, NA)) %>%
+  
   # Keep only rows with no comments. Comments represent missing/poor observations (N = 4)
   filter(is.na(Comments)) %>%
   
