@@ -38,7 +38,7 @@ seedFlwrRatio_cleaned <- seedFlwrRatio_cleaned %>%
   mutate(Distance_to_core = haversine(Longitude, Latitude, long_city, lat_city))
 
 # Write clean data to disk
-write.csv(seedFlwrRatio_cleaned, "data-clean/flwrSeedRatio_fieldPlants_cleaned.csv")
+write.csv(seedFlwrRatio_cleaned, "data-clean/flwrSeedRatio_fieldPlants.csv")
   
 # Creat population mean dataset
 seedFlwrRatio_popMeans <- seedFlwrRatio_cleaned %>%
