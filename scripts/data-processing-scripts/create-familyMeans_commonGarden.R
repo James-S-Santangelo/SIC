@@ -19,7 +19,10 @@ familyMeans <- experimental_data %>%
             Avg_leaf_lgth = mean(Avg_leaf_lgth, na.rm = T),
             Avg_petiole_lgth = mean(Avg_petiole_lgth, na.rm = T),
             Avg_stolon_thick = mean(Avg_stolon_thick, na.rm = T),
-            Avg_seeds_per_flower = mean(Avg_seeds_per_flower, na.rm = TRUE))
+            Avg_seeds_per_flower = mean(Avg_seeds_per_flower, na.rm = TRUE),
+            n_HCN = sum(HCN_Results),
+            total_plants = n(),
+            freqHCN = n_HCN / total_plants)
 
 # Write family means to disk
 write_csv(familyMeans, "data-clean/experimentalData_familyMeans.csv")
