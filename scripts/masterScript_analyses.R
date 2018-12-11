@@ -7,6 +7,46 @@
 library(lme4)
 library(lmerTest)
 library(tidyverse)
+library(vegan)
+
+#### MULTIVARIATE TRAIT CHANGE WITH URBANIZATION: FAMILY MEANS ####
+
+# Load in family mean dataset
+familyMeans <- read_csv("data-clean/experimentalData_familyMeans.csv")
+
+familyMeans_forRDA <- familyMeans %>%
+  select(-Avg_seeds_per_flower, -n_HCN, -total_plants) %>%
+  na.omit() %>%
+  select(Population, Family_ID, Distance_to_core, Time_to_germination:freqHCN)
+
+rda <- rda(familyMeans_forRDA %>% 
+                     select(Time_to_germination:freqHCN) ~ 
+         familyMeans_forRDA$Distance_to_core + Condition(familyMeans_forRDA$Population),
+         scale = TRUE)
+summary(rda)
+anova(rda, by = "term")
+scores(rda)$species
+
+pca <- prcomp(familyMeans_forRDA %>% 
+  select(Time_to_germination:freqHCN), scale = TRUE)
+familyMeans_forRDA$pca_scores <- pca$x[,"PC1"]
+
+pca$rotation
+
+
+plot(familyMeans_forRDA$Time_to_germination ~ familyMeans_forRDA$Distance_to_core)
+
+CanCorr <- CCorA(familyMeans_forRDA %>% 
+      select(Time_to_germination:freqHCN), 
+      familyMeans_forRDA$Distance_to_core)$CanCorr
+
+familyMeans_forRDA$rda_scores <- scores(rda)$sites[,"RDA1"]
+  
+rda_mod <- lm(rda_scores ~ Distance_to_core, data = familyMeans_forRDA)
+summary(rda_mod)
+
+pca_mod <- lm(pca_scores ~ Distance_to_core, data = familyMeans_forRDA)
+summary(pca_mod)
 
 #### MODELS FOR TRAIT CHANGE WITH URBANIZATION: ALL DATA ####
 
@@ -218,6 +258,17 @@ ng1=theme(aspect.ratio=0.7,panel.background = element_blank(),
           legend.position = "top", legend.direction="vertical",
           legend.text=element_text(size=17), legend.key = element_rect(fill = "white"),
           legend.title = element_text(size=17),legend.key.size = unit(1.0, "cm"))
+
+
+## MULTIVARIATE TRAIT CHANGE ##
+
+# BANNER LENGTH
+multVarTrait_plot <- ggplot(familyMeans_forRDA, aes(x = Distance_to_core, y = rda_scores)) +
+  geom_point(size = 2, position = position_dodge(width = 0.1)) +
+  geom_smooth(method = "lm", se = FALSE, colour = "black", size = 2) +
+  xlab("Distance to core (km)") + ylab("RDA1") +
+  ng1
+multVarTrait_plot
 
 ## TRAIT CHANGES WITH URBANIZATION: ALL DATA ##
 
