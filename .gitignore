@@ -3,8 +3,8 @@
 .RData
 .Ruserdata
 packrat/lib*/
-packrat/src/
 stock_data.txt
 analysis/figures/archive/
 gis/
 .DS_Store
+packrat/src/
