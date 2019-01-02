@@ -32,6 +32,8 @@ library(car)
 # Load in family mean dataset
 popMeans <- read_csv("data-clean/experimentalData_popMeans.csv")
 
+cor(popMeans$Distance_to_core, popMeans$Imperv)
+cor(popMeans$Distance_to_core, popMeans$popDens, use = "complete.obs")
 # Subset popMeans datafor use in RDA
 popMeans_forRDA <- popMeans %>%
   select(-Seeds_per_flower, -Num_Cyano) %>%
@@ -41,7 +43,7 @@ popMeans_forRDA <- popMeans %>%
 rdaPop <- rda(popMeans_forRDA %>% 
                      select(Germination:FreqHCN) ~ 
              popMeans_forRDA$Distance_to_core,
-         scale = TRUE)
+         scale = TRUE, na.action = "na.omit")
 summary(rdaPop)
 
 # Permutation based test of significance of distance term in RDA
@@ -75,6 +77,50 @@ popMeans <- popMeans %>%
 # Model testing for cline in cline_max
 clineMax_mod <- lm(clinemax ~ Distance_to_core, data = popMeans)
 summary(clineMax_mod)
+
+#### UNIVARIATE TRAIT CHANGE WITH URBANIZATION: POPULATION MEANS ####
+
+# Sig
+germMod <- lm(Germination ~ Distance_to_core, data = popMeans)
+summary(germMod)
+plot(germMod)
+hist(residuals(germMod)) # No transformation needed
+
+# Marg
+ffMod <- lm(Days_to_flower^4 ~ Distance_to_core, data = popMeans)
+summary(ffMod)
+plot(ffMod)
+hist(residuals(ffMod)) # Residuals improved following ^4 transformation
+
+# Sig
+vegMod <- lm(Veget_biomass^2 ~ Distance_to_core, data = popMeans)
+summary(vegMod)
+plot(vegMod)
+hist(residuals(vegMod)) # Normality improved following ^2 transformation
+
+# Marg
+bwMod <- lm(Bnr_wdth ~ Distance_to_core, data = popMeans)
+summary(bwMod)
+plot(bwMod)
+hist(residuals(bwMod)) #  No transformation needed
+
+# Sig
+blMod <- lm(Bnr_lgth ~ Distance_to_core, data = popMeans)
+summary(blMod)
+plot(blMod)
+hist(residuals(blMod)) # No transformation needed
+
+# Marg
+HCNMod <- lm(sqrt(FreqHCN) ~ Distance_to_core, data = popMeans)
+summary(HCNMod)
+plot(HCNMod)
+hist(residuals(HCNMod)) # Square root transformation improves normality
+
+# NS
+stMod <- lm(Stolon_thick ~ Distance_to_core, data = popMeans)
+summary(stMod)
+plot(stMod)
+hist(residuals(stMod)) # No transformation needed
 
 #### POLLINATOR OBSERVATIONS ####
 
@@ -122,6 +168,7 @@ Anova(pollVisit, type = "III") #Type 3 for interpreting interaction
 hist(residuals(pollVisit))
 par(mfrow = c(2,2))
 plot(pollVisit)
+
 
 #### SEEDS PER FLOWER ####
 
@@ -706,7 +753,7 @@ species_scoresFam <- scores(rdaFam)$species[,"RDA1"]
 # Traits are first standardized by dividing by experiment-wide mean.
 # Standardized trait values are multiplied by their cannonical regression
 # coefficients on RDA. This is done for each trait and then summed. 
-familyMeans <- familyMeans %>%
+allData <- allData %>%
   mutate(clinemax = 
            (Time_to_germination / mean(Time_to_germination, na.rm = TRUE)) * species_scoresFam["Time_to_germination"] +
            (Days_to_flower / mean(Days_to_flower, na.rm = TRUE)) * species_scoresFam["Days_to_flower"] +
