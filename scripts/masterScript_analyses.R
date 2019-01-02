@@ -32,8 +32,6 @@ library(car)
 # Load in family mean dataset
 popMeans <- read_csv("data-clean/experimentalData_popMeans.csv")
 
-cor(popMeans$Distance_to_core, popMeans$Imperv)
-cor(popMeans$Distance_to_core, popMeans$popDens, use = "complete.obs")
 # Subset popMeans datafor use in RDA
 popMeans_forRDA <- popMeans %>%
   select(-Seeds_per_flower, -Num_Cyano) %>%
@@ -122,6 +120,12 @@ summary(stMod)
 plot(stMod)
 hist(residuals(stMod)) # No transformation needed
 
+# NS
+sexInvestMod <- lm(Reprod_biomass / Veget_biomass ~ Distance_to_core, data = popMeans)
+summary(sexInvestMod)
+plot(sexInvestMod)
+hist(residuals(sexInvestMod)) # No transformation needed
+
 #### POLLINATOR OBSERVATIONS ####
 
 # load data
@@ -194,6 +198,15 @@ summary(seedPerFlwrField)
 Anova(seedPerFlwrField, type = "III")
 plot(seedPerFlwrField) # Loogs good
 hist(residuals(seedPerFlwrField)) # Loogs good
+
+
+#### CORRELATION OF DISTANCE, IMPERV, AND POP DENS ####
+
+enviroData <- read_csv("enviroData.csv") %>%
+  left_join(., popMeans %>% select(Population, Distance_to_core))
+
+cor(enviroData$Distance_to_core, enviroData$Imperv)
+cor(enviroData$Distance_to_core, enviroData$popDens, use = "complete.obs")
 
 #### FIGURES ####
 
