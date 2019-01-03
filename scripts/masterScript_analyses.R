@@ -199,6 +199,10 @@ Anova(seedPerFlwrField, type = "III")
 plot(seedPerFlwrField) # Loogs good
 hist(residuals(seedPerFlwrField)) # Loogs good
 
+# Means
+seedsPerFlwr %>%
+  group_by(source) %>%
+  summarize(mean = mean(Seeds_per_flower))
 
 #### CORRELATION OF DISTANCE, IMPERV, AND POP DENS ####
 
@@ -345,24 +349,25 @@ ggsave("analysis/figures/main-text/figure3A_visitsPerInf_by_Distance.pdf",
 linetypeSeedFlwrs <- c("Field" = "dashed", "CG" = "dotted")
 seedPerFlwr_plot <- ggplot(seedsPerFlwr, aes(x = Distance_to_core, y = Seeds_per_flower)) +
   geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
-  geom_point(size = 4, alpha = 0.7, colour = "black", aes(shape = source, fill = source)) +
+  geom_point(size = 4, alpha = 0.5, colour = "black", aes(shape = source, fill = source)) +
   scale_shape_manual(values = c(21, 24)) +
   scale_fill_manual(values = c("black", "white")) +
   geom_line(data = seedsPerFlwr %>% filter(source == "field"),
             stat = "smooth", 
             method = "lm",
-            alpha = 0.7,
+            alpha = 0.5,
             size = 1.5,
             aes(linetype = "Field")) +
   geom_line(data = seedsPerFlwr %>% filter(source == "common garden"),
             stat = "smooth", 
             method = "lm",
-            alpha = 0.7,
+            alpha = 0.5,
             size = 1.5,
             aes(linetype = "CG")) +
   scale_linetype_manual(name = "", labels = c("Field", "Common Garden"),
                         values = linetypeSeedFlwrs) +
-  ng1
+  ng1 + theme(legend.key.size = unit(1.5, "cm"),
+              legend.spacing.x = unit(0.1, "cm"))
 seedPerFlwr_plot
 
 ggsave("analysis/figures/main-text/figure3B_seeds_per_flower.pdf", 
