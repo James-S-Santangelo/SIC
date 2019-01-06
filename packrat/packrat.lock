@@ -121,12 +121,6 @@ Source: CRAN
 Version: 1.3-2
 Hash: 0bf8618b585fa98eb23414cd3ab95118
 
-Package: cowplot
-Source: CRAN
-Version: 0.9.3
-Hash: c9b93ad25628bdaf66e7a53b4ebe5510
-Requires: ggplot2, gtable, plyr, scales
-
 Package: crayon
 Source: CRAN
 Version: 1.3.4
@@ -301,11 +295,6 @@ Version: 1.2.4
 Hash: c0d56ab1da2998648b8e9cc3c5f5e54b
 Requires: Rcpp
 
-Package: mnormt
-Source: CRAN
-Version: 1.5-5
-Hash: d0d5efbb1fb26d2dc5f9394c223084b5
-
 Package: modelr
 Source: CRAN
 Version: 0.1.2
@@ -399,12 +388,6 @@ Package: ps
 Source: CRAN
 Version: 1.3.0
 Hash: 1d4cae95887ffe5b1a22bea5994476cd
-
-Package: psych
-Source: CRAN
-Version: 1.8.10
-Hash: 9ce159aa5b568ac1201a55d828df5fea
-Requires: mnormt
 
 Package: purrr
 Source: CRAN
