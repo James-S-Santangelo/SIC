@@ -97,7 +97,20 @@ long_cg <- -79.662514
 # Add distances to dataset
 experimentalData_modified <- experimentalData_modified %>%
   mutate(Distance_to_core = haversine(Longitude, Latitude, long_city, lat_city),
-         Distance_to_cg = haversine(Longitude, Latitude, long_cg, lat_cg))
+         Distance_to_cg = haversine(Longitude, Latitude, long_cg, lat_cg)) %>% 
+  mutate(Time_to_germination_C = Time_to_germination / mean(Time_to_germination, na.rm = TRUE),
+         Days_to_flower_C = Days_to_flower / mean(Days_to_flower, na.rm = TRUE),
+         Num_Inf_C = Num_Inf / mean(Num_Inf, na.rm = TRUE),
+         Reprod_biomass_C = Reprod_biomass / mean(Reprod_biomass, na.rm = TRUE),
+         Veget_biomass_C = Veget_biomass / mean(Veget_biomass, na.rm = TRUE),
+         Avg_bnr_wdth_C = Avg_bnr_wdth / mean(Avg_bnr_wdth, na.rm = TRUE),
+         Avg_bnr_lgth_C = Avg_bnr_lgth / mean(Avg_bnr_lgth, na.rm = TRUE),
+         Avg_petiole_lgth_C = Avg_petiole_lgth / mean(Avg_petiole_lgth, na.rm = TRUE),
+         Avg_peducle_lgth_C = Avg_peducle_lgth / mean(Avg_peducle_lgth, na.rm = TRUE),
+         Avg_num_flwrs_C = Avg_num_flwrs / mean(Avg_num_flwrs, na.rm = TRUE),
+         Avg_leaf_wdth_C = Avg_leaf_wdth / mean(Avg_leaf_wdth, na.rm = TRUE),
+         Avg_leaf_lgth_C = Avg_leaf_lgth / mean(Avg_leaf_lgth, na.rm = TRUE),
+         Avg_stolon_thick_C = Avg_stolon_thick / mean(Avg_stolon_thick, na.rm = TRUE))
 
 # Write clean data
 write_csv(experimentalData_modified, "data-clean/experimentalData_individualPlants.csv")
