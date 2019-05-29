@@ -23,6 +23,7 @@ popMeans <- familyMeans %>%
             Avg_seeds_per_flower = mean(Avg_seeds_per_flower, na.rm = TRUE),
             Avg_num_flwrs = mean(Avg_num_flwrs, na.rm = TRUE),
             freqHCN = mean(freqHCN, na.rm = TRUE),
+            sex_asex = Reprod_biomass / Veget_biomass,
             Time_to_germination_C = mean(Time_to_germination_C, na.rm = TRUE),
             Days_to_flower_C = mean(Days_to_flower_C, na.rm = TRUE),
             Num_Inf_C = mean(Num_Inf_C, na.rm = TRUE),

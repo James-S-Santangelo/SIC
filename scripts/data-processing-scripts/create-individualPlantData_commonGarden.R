@@ -110,7 +110,8 @@ experimentalData_modified <- experimentalData_modified %>%
          Avg_num_flwrs_C = Avg_num_flwrs / mean(Avg_num_flwrs, na.rm = TRUE),
          Avg_leaf_wdth_C = Avg_leaf_wdth / mean(Avg_leaf_wdth, na.rm = TRUE),
          Avg_leaf_lgth_C = Avg_leaf_lgth / mean(Avg_leaf_lgth, na.rm = TRUE),
-         Avg_stolon_thick_C = Avg_stolon_thick / mean(Avg_stolon_thick, na.rm = TRUE))
+         Avg_stolon_thick_C = Avg_stolon_thick / mean(Avg_stolon_thick, na.rm = TRUE),
+         sex_asex = Reprod_biomass / Veget_biomass)
 
 # Write clean data
 write_csv(experimentalData_modified, "data-clean/experimentalData_individualPlants.csv")
