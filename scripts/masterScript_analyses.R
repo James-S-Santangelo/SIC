@@ -27,101 +27,148 @@ library(tidyverse)
 library(vegan)
 library(car)
 
-#### MULTIVARIATE TRAIT CHANGE WITH URBANIZATION: POPULATION MEANS ####
+#### MULTIVARIATE TRAIT CHANGE WITH URBANIZATION: FAMILY MEANS ####
 
 # Load in family mean dataset
-popMeans <- read_csv("data-clean/experimentalData_popMeans.csv")
+famMeans <- read_csv("data-clean/experimentalData_familyMeans.csv")
 
-# Subset popMeans datafor use in RDA
-popMeans_forRDA <- popMeans %>%
-  select(-Seeds_per_flower, -Num_Cyano) %>%
-  select(Population, Distance_to_core, Germination:FreqHCN)
+# Subset data for RDA
+famMeans_forRDA <- famMeans %>%
+  # select(-Seeds_per_flower, -Num_Cyano) %>%
+  select(-total_plants, -n_HCN, -Avg_seeds_per_flower) %>%
+  select(Population, Distance_to_core, Family_ID, Time_to_germination_C:Avg_stolon_thick_C, freqHCN) %>% 
+  na.omit()
 
 # Perform RDA with multiple traits as response, distance as sole predictors
-rdaPop <- rda(popMeans_forRDA %>% 
-                     select(Germination:FreqHCN) ~ 
-             popMeans_forRDA$Distance_to_core,
-         scale = TRUE, na.action = "na.omit")
-summary(rdaPop)
+rdaFam <- rda(famMeans_forRDA %>% 
+                     select(Time_to_germination_C:freqHCN) ~ 
+                famMeans_forRDA$Distance_to_core,
+              scale = TRUE, na.action = "na.omit")
+summary(rdaFam)
 
 # Permutation based test of significance of distance term in RDA
 set.seed(42)
-anova.cca(rdaPop, by = "term", permutations = 1000)
+anova.cca(rdaFam, by = "term", permutations = 10000)
 
 # Extract canonical coefficients of traits onto RDA1 (i.e. 'species scores')
-species_scores <- scores(rdaPop)$species[,"RDA1"]
+species_scores <- scores(rdaFam)$species[,"RDA1"]
 
 # Calculate cline_max according to Stock et al. 
 # Traits are first standardized by dividing by experiment-wide mean.
 # Standardized trait values are multiplied by their cannonical regression
 # coefficients on RDA. This is done for each trait and then summed. 
-popMeans <- popMeans %>%
+indPlantData <- indPlantData %>% 
   mutate(clinemax = 
-           (Germination / mean(Germination)) * species_scores["Germination"] +
-           (Days_to_flower / mean(Days_to_flower)) * species_scores["Days_to_flower"] +
-           (Num_Inf / mean(Num_Inf)) * species_scores["Num_Inf"] +
-           (Reprod_biomass / mean(Reprod_biomass)) * species_scores["Reprod_biomass"] +
-           (Veget_biomass / mean(Veget_biomass)) * species_scores["Veget_biomass"] +
-           (Bnr_wdth / mean(Bnr_wdth)) * species_scores["Bnr_wdth"] +
-           (Bnr_lgth / mean(Bnr_lgth)) * species_scores["Bnr_lgth"] +
-           (Petiole_lgth / mean(Petiole_lgth)) * species_scores["Petiole_lgth"] +
-           (Peducle_lgth / mean(Peducle_lgth)) * species_scores["Peducle_lgth"] +
-           (Num_flwrs / mean(Num_flwrs)) * species_scores["Num_flwrs"] +
-           (Leaf_wdth / mean(Leaf_wdth)) * species_scores["Leaf_wdth"] +
-           (Leaf_lgth / mean(Leaf_lgth)) * species_scores["Leaf_lgth"] +
-           (Stolon_thick / mean(Stolon_thick)) * species_scores["Stolon_thick"] +
-           (FreqHCN / mean(FreqHCN)) * species_scores["FreqHCN"])
+           (Time_to_germination_C * species_scores["Time_to_germination_C"]) +
+           (Days_to_flower_C * species_scores["Days_to_flower_C"]) +
+           (Num_Inf_C * species_scores["Num_Inf_C"]) +
+           (Reprod_biomass_C * species_scores["Reprod_biomass_C"]) +
+           (Veget_biomass_C * species_scores["Veget_biomass_C"]) +
+           (Avg_bnr_wdth_C * species_scores["Avg_bnr_wdth_C"]) +
+           (Avg_bnr_lgth_C * species_scores["Avg_bnr_lgth_C"]) +
+           (Avg_petiole_lgth_C * species_scores["Avg_petiole_lgth_C"]) +
+           (Avg_peducle_lgth_C * species_scores["Avg_peducle_lgth_C"]) +
+           (Avg_num_flwrs_C * species_scores["Avg_num_flwrs_C"]) +
+           (Avg_leaf_wdth_C * species_scores["Avg_leaf_wdth_C"]) +
+           (Time_to_germination_C * species_scores["Avg_leaf_lgth_C"]) +
+           (Avg_stolon_thick_C * species_scores["Avg_stolon_thick_C"]))
+  
+famMeans_clineMax <- indPlantData %>% 
+  group_by(Population, Family_ID, Distance_to_core) %>% 
+  summarise(clinemax = mean(clinemax, na.rm = TRUE))
 
 # Model testing for cline in cline_max
-clineMax_mod <- lm(clinemax ~ Distance_to_core, data = popMeans)
+clineMax_mod <- lm(clinemax ~ Distance_to_core, data = famMeans_clineMax)
 summary(clineMax_mod)
 
-#### UNIVARIATE TRAIT CHANGE WITH URBANIZATION: POPULATION MEANS ####
+#### UNIVARIATE TRAIT CHANGE WITH URBANIZATION: FAMILY MEANS ####
 
-# Sig
-germMod <- lm(Germination ~ Distance_to_core, data = popMeans)
+# Sig. 
+germMod <- lm(Time_to_germination^(1/4) ~ Distance_to_core, data = famMeans)
 summary(germMod)
 plot(germMod)
-hist(residuals(germMod)) # No transformation needed
+hist(residuals(germMod)) # Fourth root transformation
 
-# Marg
-ffMod <- lm(Days_to_flower^4 ~ Distance_to_core, data = popMeans)
+# Sig.
+ffMod <- lm(Days_to_flower ~ Distance_to_core, data = famMeans)
 summary(ffMod)
 plot(ffMod)
-hist(residuals(ffMod)) # Residuals improved following ^4 transformation
+hist(residuals(ffMod)) # No transformation needed
 
-# Sig
-vegMod <- lm(Veget_biomass^2 ~ Distance_to_core, data = popMeans)
+# NS
+infMod <- lm(sqrt(Num_Inf) ~ Distance_to_core, data = famMeans)
+summary(infMod)
+plot(infMod)
+hist(residuals(infMod)) # Square root transformation
+
+# NS
+repMod <- lm(Reprod_biomass ~ Distance_to_core, data = famMeans)
+summary(repMod)
+plot(repMod)
+hist(residuals(repMod)) # No transformation needed
+
+# Sig.
+vegMod <- lm(Veget_biomass ~ Distance_to_core, data = famMeans)
 summary(vegMod)
 plot(vegMod)
-hist(residuals(vegMod)) # Normality improved following ^2 transformation
+hist(residuals(vegMod)) # No transformation needed
 
 # Marg
-bwMod <- lm(Bnr_wdth ~ Distance_to_core, data = popMeans)
+bwMod <- lm(Avg_bnr_wdth ~ Distance_to_core, data = famMeans)
 summary(bwMod)
 plot(bwMod)
 hist(residuals(bwMod)) #  No transformation needed
 
-# Sig
-blMod <- lm(Bnr_lgth ~ Distance_to_core, data = popMeans)
+# Sig.
+blMod <- lm(Avg_bnr_lgth ~ Distance_to_core, data = famMeans)
 summary(blMod)
 plot(blMod)
 hist(residuals(blMod)) # No transformation needed
 
-# Marg
-HCNMod <- lm(sqrt(FreqHCN) ~ Distance_to_core, data = popMeans)
-summary(HCNMod)
-plot(HCNMod)
-hist(residuals(HCNMod)) # Square root transformation improves normality
+# NS
+pedMod <- lm(Avg_peducle_lgth ~ Distance_to_core, data = famMeans)
+summary(pedMod)
+plot(pedMod)
+hist(residuals(pedMod)) # No transformation needed
 
 # NS
-stMod <- lm(Stolon_thick ~ Distance_to_core, data = popMeans)
+numFlwrsMod <- lm(Avg_num_flwrs ~ Distance_to_core, data = famMeans)
+summary(numFlwrsMod)
+plot(numFlwrsMod)
+hist(residuals(numFlwrsMod)) # No transformation needed
+
+# NS
+leafWdthMod <- lm(Avg_leaf_wdth ~ Distance_to_core, data = famMeans)
+summary(leafWdthMod)
+plot(leafWdthMod)
+hist(residuals(leafWdthMod)) # No transformation needed
+
+# NS
+leafLgthMod <- lm(Avg_leaf_lgth ~ Distance_to_core, data = famMeans)
+summary(leafLgthMod)
+plot(leafLgthMod)
+hist(residuals(leafLgthMod)) # No transformation needed
+
+# NS
+petMod <- lm(Avg_petiole_lgth ~ Distance_to_core, data = famMeans)
+summary(petMod)
+plot(petMod)
+hist(residuals(petMod)) # No transformation needed
+
+# Sig
+stMod <- lm(Avg_stolon_thick ~ Distance_to_core, data = famMeans)
 summary(stMod)
 plot(stMod)
 hist(residuals(stMod)) # No transformation needed
 
+# Marg
+HCNMod <- lm(freqHCN ~ Distance_to_core, data = famMeans)
+summary(HCNMod)
+plot(HCNMod)
+hist(residuals(HCNMod)) # No transformation
+
 # NS
-sexInvestMod <- lm(Reprod_biomass / Veget_biomass ~ Distance_to_core, data = popMeans)
+sexInvestMod <- lm(sex_asex ~ Distance_to_core, data = famMeans)
 summary(sexInvestMod)
 plot(sexInvestMod)
 hist(residuals(sexInvestMod)) # No transformation needed
@@ -247,18 +294,18 @@ ng1=theme(aspect.ratio=0.7,panel.background = element_blank(),
 # figure 2A #
 
 # Extract RDA1 and PC1 site scores
-df_sites  <- data.frame(scores(rdaPop, display = "sites", scaling = "sites")[,1:2]) %>%
-  rownames_to_column(var = "Population") %>%
-  mutate(Population = seq(1:27)) %>%
-  left_join(., popMeans_forRDA %>% select(Population, Distance_to_core))
+df_sites  <- data.frame(scores(rdaFam, display = "sites", scaling = "sites")[,1:2]) %>%
+  # rownames_to_column(var = "Population") %>%
+  # mutate(Population = seq(1:27)) %>%
+  cbind(., famMeans_forRDA %>% select(Population, Distance_to_core))
 
 # Extract RDA1 and PC1 species scores
-df2_species  <- data.frame(scores(rdaPop, display = "species", scaling = "species")[,1:2])     # loadings for PC1 and PC2
+df2_species  <- data.frame(scores(rdaFam, display = "species", scaling = "species")[,1:2])     # loadings for PC1 and PC2
 row.names(df_sites) <- seq(1:27)
 
 # Plot site scores along first 2 axes. Colour points by distance
 rda_plot <- ggplot(df_sites, aes(x = RDA1, y = PC1)) + 
-  geom_point(size = 4, shape = 21, colour = "black", aes(fill = Distance_to_core)) +
+  geom_point(size = 3, shape = 21, colour = "black", aes(fill = Distance_to_core)) +
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_vline(xintercept = 0, linetype = "dotted") +
   scale_fill_gradient(low = "white", high = "black",
@@ -282,7 +329,7 @@ rda_triplot <- rda_plot +
             aes(x = RDA1, y = PC1, label = rownames(df2_species),
                 hjust = 0.5 * (1 - sign(RDA1)), vjust = 0.5 * (1 - sign(PC1))), 
             color = "black", size = 2.5) +
-  xlab("RDA1 (8.6%)") + ylab("PC1 (35%)")
+  xlab("RDA1 (2.7%)") + ylab("PC1 (26%)")
 rda_triplot
 
 ggsave("analysis/figures/main-text/figure2A_RDA-triplot.pdf", 
@@ -290,8 +337,8 @@ ggsave("analysis/figures/main-text/figure2A_RDA-triplot.pdf",
 
 # figure 2B #
 
-clineMax_plot <- ggplot(popMeans, aes(x = Distance_to_core, y = clinemax)) +
-  geom_point(size = 4, colour = "black") +
+clineMax_plot <- ggplot(famMeans_clineMax, aes(x = Distance_to_core, y = clinemax)) +
+  geom_point(size = 3, colour = "black") +
   geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
   ng1
 clineMax_plot
