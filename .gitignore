@@ -7,6 +7,6 @@ stock_data.txt
 analysis/figures/archive/
 gis/
 .DS_Store
-analysis/figures/main-text/*.svg 
-analysis/figures/main-text/*.pdf 
+*.svg 
+*.pdf 
 

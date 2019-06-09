@@ -1,0 +1,15 @@
+Trait,Mean,Unstandarized beta,Standardized beta,P-value,R squared
+Time_to_germination,4.9577,-0.055,-0.0112,0,0.1583
+Days_to_flower,62.3492,-0.067,-0.0011,0.0153,0.0281
+Veget_biomass,3.6464,-0.0196,-0.0054,2e-04,0.0653
+Avg_bnr_lgth,6.1924,-0.0048,-8e-04,0.0463,0.0191
+Avg_stolon_thick,1.3788,0.0021,0.0015,0.0047,0.038
+freqHCN,0.2522,0.0037,"NA",0.0122,0.0307
+Num_Inf,20.8871,-0.0023,-1e-04,0.9606,0
+Reprod_biomass,1.6082,-5e-04,-3e-04,0.8942,1e-04
+Avg_bnr_wdth,3.5617,-0.0021,-6e-04,0.0884,0.014
+Avg_peducle_lgth,101.9824,0.0694,7e-04,0.4183,0.0032
+Avg_num_flwrs,46.1748,0.0322,7e-04,0.5659,0.0016
+Avg_leaf_wdth,11.0208,-0.0012,-1e-04,0.8617,1e-04
+Avg_leaf_lgth,12.5902,-9e-04,-1e-04,0.8965,1e-04
+Avg_petiole_lgth,446.7581,0.3686,8e-04,0.4322,0.003

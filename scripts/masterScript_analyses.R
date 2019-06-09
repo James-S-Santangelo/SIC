@@ -42,7 +42,7 @@ famMeans_forRDA <- famMeans %>%
 # Perform RDA with multiple traits as response, distance as sole predictors
 rdaFam <- rda(famMeans_forRDA %>% 
                      select(Time_to_germination_C:freqHCN) ~ 
-                famMeans_forRDA$Distance_to_core,
+                famMeans_forRDA$Distance_to_core, 
               scale = TRUE, na.action = "na.omit")
 summary(rdaFam)
 
@@ -85,17 +85,45 @@ summary(clineMax_mod)
 
 #### UNIVARIATE TRAIT CHANGE WITH URBANIZATION: FAMILY MEANS ####
 
+## SIGNIFICANT ##
+
 # Sig. 
-germMod <- lm(Time_to_germination^(1/4) ~ Distance_to_core, data = famMeans)
+germMod <- lm(Time_to_germination ~ Distance_to_core, data = famMeans)
 summary(germMod)
 plot(germMod)
-hist(residuals(germMod)) # Fourth root transformation
+hist(residuals(germMod)) # No transformation
 
 # Sig.
 ffMod <- lm(Days_to_flower ~ Distance_to_core, data = famMeans)
 summary(ffMod)
 plot(ffMod)
 hist(residuals(ffMod)) # No transformation needed
+
+# Sig.
+vegMod <- lm(Veget_biomass ~ Distance_to_core, data = famMeans)
+summary(vegMod)
+plot(vegMod)
+hist(residuals(vegMod)) # No transformation needed
+
+# Sig.
+blMod <- lm(Avg_bnr_lgth ~ Distance_to_core, data = famMeans)
+summary(blMod)
+plot(blMod)
+hist(residuals(blMod)) # No transformation needed
+
+# Sig
+stMod <- lm(Avg_stolon_thick ~ Distance_to_core, data = famMeans)
+summary(stMod)
+plot(stMod)
+hist(residuals(stMod)) # No transformation needed
+
+# Marg
+HCNMod <- lm(freqHCN ~ Distance_to_core, data = famMeans)
+summary(HCNMod)
+plot(HCNMod)
+hist(residuals(HCNMod)) # No transformation
+
+## NOT SIGNIFICANT ##
 
 # NS
 infMod <- lm(sqrt(Num_Inf) ~ Distance_to_core, data = famMeans)
@@ -109,23 +137,11 @@ summary(repMod)
 plot(repMod)
 hist(residuals(repMod)) # No transformation needed
 
-# Sig.
-vegMod <- lm(Veget_biomass ~ Distance_to_core, data = famMeans)
-summary(vegMod)
-plot(vegMod)
-hist(residuals(vegMod)) # No transformation needed
-
 # Marg
 bwMod <- lm(Avg_bnr_wdth ~ Distance_to_core, data = famMeans)
 summary(bwMod)
 plot(bwMod)
 hist(residuals(bwMod)) #  No transformation needed
-
-# Sig.
-blMod <- lm(Avg_bnr_lgth ~ Distance_to_core, data = famMeans)
-summary(blMod)
-plot(blMod)
-hist(residuals(blMod)) # No transformation needed
 
 # NS
 pedMod <- lm(Avg_peducle_lgth ~ Distance_to_core, data = famMeans)
@@ -157,19 +173,7 @@ summary(petMod)
 plot(petMod)
 hist(residuals(petMod)) # No transformation needed
 
-# Sig
-stMod <- lm(Avg_stolon_thick ~ Distance_to_core, data = famMeans)
-summary(stMod)
-plot(stMod)
-hist(residuals(stMod)) # No transformation needed
-
 # Marg
-HCNMod <- lm(freqHCN ~ Distance_to_core, data = famMeans)
-summary(HCNMod)
-plot(HCNMod)
-hist(residuals(HCNMod)) # No transformation
-
-# NS
 sexInvestMod <- lm(sex_asex ~ Distance_to_core, data = famMeans)
 summary(sexInvestMod)
 plot(sexInvestMod)
@@ -199,15 +203,6 @@ visitshare_polldata <- complete_polldata %>%
   # replace NA in visits/inf with zero
   mutate(Visits_per_Inf = replace_na(Visits_per_Inf, 0))
 
-# Summarize daya by population only (merge morphs)
-# Used for total abundance analysis
-popmeans_polldata <- polldata %>% 
-  group_by(Population, Distance_to_core) %>% 
-  summarise(Num.Ind = n(),
-            Num_Visit = sum(Num_Visit),
-            Num_Inf = mean(Num_Inf)) %>% 
-  mutate(Visits_per_Inf = Num_Visit / Num_Inf)
-
 # Square root transform visits per inflorescence to improve normality of model residuals
 visitshare_polldata$sqRootVisInf <- sqrt(visitshare_polldata$Visits_per_Inf)
 
@@ -225,6 +220,7 @@ plot(pollVisit)
 #### SEEDS PER FLOWER ####
 
 # Load in seeds per flower from field-collected inflorescences
+popMeans <- read_csv("data-clean/experimentalData_popMeans.csv")
 seedFlwrFieldData <- read_csv("data-clean/flwrSeedRatio_fieldPlants.csv") %>%
   select(-X1, -Comments) %>%
   group_by(Population, Distance_to_core) %>%
@@ -232,7 +228,8 @@ seedFlwrFieldData <- read_csv("data-clean/flwrSeedRatio_fieldPlants.csv") %>%
 
 # Retrieve seeds per flower from common garden plants
 seedFlwrComGarData <- popMeans %>%
-  select(Population, Distance_to_core, Seeds_per_flower)
+  select(Population, Distance_to_core, Avg_seeds_per_flower) %>% 
+  rename("Seeds_per_flower" = "Avg_seeds_per_flower")
 
 # Combine both dataframes to run single linear model
 seedsPerFlwr <- bind_rows(seedFlwrFieldData, seedFlwrComGarData,
@@ -260,11 +257,14 @@ seedMods <- seedsPerFlwr %>%
 
 #### CORRELATION OF DISTANCE, IMPERV, AND POP DENS ####
 
-enviroData <- read_csv("enviroData.csv") %>%
+enviroData <- read_csv("data-clean/enviroData.csv") %>%
   left_join(., popMeans %>% select(Population, Distance_to_core))
 
-cor(enviroData$Distance_to_core, enviroData$Imperv)
+cor(enviroData$Distance_to_core, enviroData$Imperv, use = "complete.obs")
 cor(enviroData$Distance_to_core, enviroData$popDens, use = "complete.obs")
+
+summary(lm(Imperv ~ Distance_to_core, data = enviroData))
+summary(lm(popDens ~ Distance_to_core, data = enviroData))
 
 #### FIGURES: MAIN TEXT ####
 
@@ -355,10 +355,10 @@ ggsave("analysis/figures/main-text/figure2B_clineMax_by_distance.pdf",
 cols <- c("BB"="#FF0000","HB"="#F2AD00","SB"="#5BBCD6")
 linetype <- c("BB"="dashed","HB"="dotted","SB"="dotdash")
 plotPoll <-
-  ggplot(visitshare.polldata, aes(x = Distance_to_core, y = Visits_per_Inf)) +
+  ggplot(visitshare_polldata, aes(x = Distance_to_core, y = Visits_per_Inf)) +
   labs(x = "Source population distance\nto urban centre (km)",
        y = "Number of pollinator visits\n per inflorescence") +
-  geom_line(data = visitshare.polldata %>% filter(Morph == "Honey Bee"),
+  geom_line(data = visitshare_polldata %>% filter(Morph == "Honey Bee"),
             stat = "smooth",
             method = "loess",
             se = F, 
@@ -366,7 +366,7 @@ plotPoll <-
             size = 1.25,
             aes(linetype = "HB",
                 colour = "HB")) +
-  geom_line(data = visitshare.polldata %>% filter(Morph == "Bumble Bee"),
+  geom_line(data = visitshare_polldata %>% filter(Morph == "Bumble Bee"),
             stat = "smooth",
             method = "loess",
             se = F, 
@@ -374,7 +374,7 @@ plotPoll <-
             size = 1.25,
             aes(linetype = "BB",
                 colour = "BB")) +
-  geom_line(data = visitshare.polldata %>% filter(Morph == "Sweat Bee"),
+  geom_line(data = visitshare_polldata %>% filter(Morph == "Sweat Bee"),
             stat = "smooth",
             method = "loess",
             se = F, 
@@ -427,7 +427,249 @@ seedPerFlwr_plot
 ggsave("analysis/figures/main-text/figure3B_seeds_per_flower.pdf", 
        plot = seedPerFlwr_plot, width = 8, height = 6, unit = "in", dpi = 600)
 
-#### SUPPLEMENTARY MATERIALS ####
+#### FIGURES: SUPPLEMENTARY MATERIALS ####
+
+## FIGURE S1
+
+# Figure S1A: Imperv. vs. distance
+imperv_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = Imperv)) +
+  geom_point(size = 2.5) +
+  geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
+  ylab('Impervious surface (%)') + xlab('Source population distance from urban core (km)') +
+  ng1
+imperv_vs_distance
+
+ggsave("analysis/figures/sup-mat/figureS1a_Imperv_vs.distance.pdf", 
+       plot = imperv_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
+
+# Figure S1B: Pop Dens vs. distance
+popDens_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = popDens)) +
+  geom_point(size = 2.5) +
+  geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
+  ylab(expression(~Human~population~density~(per~km^2))) + xlab('Source population distance from urban core (km)') +
+  ng1
+popDens_vs_distance
+
+ggsave("analysis/figures/sup-mat/figureS1b_popDens_vs.distance.pdf", 
+       plot = popDens_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
+
+
+## FIGURE S2
+
+#' Generates biplot of with response variable against predictor variable
+#'     Writes biplot to disk in outpath.
+#'
+#' @param df Dataframe containing variables that will be plotted as columns
+#' @param response_var Variable to be plotted on y-axis
+#' @param outpath Path to which plot will be written
+#' @param figID Figure numbe and letter (e.g. Figure 2a)
+#' 
+#' @return None. Writes plot to disk.
+create_Biplot <- function(df, response_var, outpath, figID){
+  
+  # print(path)
+  response_vector <- df %>% pull(response_var)
+  
+  plot <- df %>%
+    ggplot(., aes_string(x = "Distance_to_core", y = response_var)) +
+    geom_point(colour = "black", size = 2.5) +
+    geom_smooth(method = "lm", se = FALSE, colour = "black", size = 1) + 
+    ylab(response_var) + xlab("Source population distance from the urban core (km)") +
+    ng1
+    
+    path <- paste0(outpath, figID, "_", response_var, "_by_distance", ".pdf")
+    
+    # Write dataframe
+    ggsave(filename = path, plot = plot, device = "pdf",
+           width = 6, height = 6, dpi = 300)
+  
+}
+
+
+outpath <- "analysis/figures/sup-mat/"
+
+# Figure S2a
+create_Biplot(df = famMeans, response_var = "Time_to_germination", 
+              outpath = outpath, figID = "figureS2a")
+# Figure S2b
+create_Biplot(df = famMeans, response_var = "Days_to_flower", 
+              outpath = outpath, figID = "figureS2b")
+# Figure S2c
+create_Biplot(df = famMeans, response_var = "Veget_biomass", 
+              outpath = outpath, figID = "figureS2c")
+# Figure S2d
+create_Biplot(df = famMeans, response_var = "Avg_bnr_lgth", 
+              outpath = outpath, figID = "figureS2d")
+# Figure S2e
+create_Biplot(df = famMeans, response_var = "Avg_stolon_thick", 
+              outpath = outpath, figID = "figureS2e")
+# Figure S2f
+create_Biplot(df = famMeans, response_var = "freqHCN", 
+              outpath = outpath, figID = "figureS2f")
+
+## FIGURE S3
+
+# Figure S3a
+create_Biplot(df = famMeans, response_var = "Num_Inf", 
+              outpath = outpath, figID = "figureS3a")
+# Figure S3b
+create_Biplot(df = famMeans, response_var = "Reprod_biomass", 
+              outpath = outpath, figID = "figureS3b")
+# Figure S3c
+create_Biplot(df = famMeans, response_var = "Avg_bnr_wdth", 
+              outpath = outpath, figID = "figureS3c")
+# Figure S3d
+create_Biplot(df = famMeans, response_var = "Avg_peducle_lgth", 
+              outpath = outpath, figID = "figureS3d")
+# Figure S3e
+create_Biplot(df = famMeans, response_var = "Avg_num_flwrs", 
+              outpath = outpath, figID = "figureS3e")
+# Figure S3f
+create_Biplot(df = famMeans, response_var = "Avg_leaf_wdth", 
+              outpath = outpath, figID = "figureS3f")
+# Figure S3g
+create_Biplot(df = famMeans, response_var = "Avg_leaf_lgth", 
+              outpath = outpath, figID = "figureS3g")
+# Figure S3h
+create_Biplot(df = famMeans, response_var = "Avg_petiole_lgth", 
+              outpath = outpath, figID = "figureS3h")
+# Figure S3i
+create_Biplot(df = famMeans, response_var = "sex_asex", 
+              outpath = outpath, figID = "figureS3i")
+
+
+## FIGURE S4
+
+cols <- c("BB"="#FF0000","HB"="#F2AD00","SB"="#5BBCD6")
+linetype <- c("BB"="dashed","HB"="dotted","SB"="dotdash")
+shape <- c("BB"=21,"HB"=22,"SB"=24)
+fill <- c("BB"="#FF0000","HB"="#F2AD00","SB"="#5BBCD6")
+plotPoll_lin <-
+  ggplot(visitshare_polldata, aes(x = Distance_to_core, y = Visits_per_Inf)) +
+  labs(x = "Source population distance\nto urban centre (km)",
+       y = "Number of pollinator visits\n per inflorescence") +
+  geom_point(data = visitshare_polldata %>% filter(Morph == "Honey Bee"),
+             size = 2.5, aes(colour = "HB", shape = "HB", fill = "HB")) +  
+  geom_point(data = visitshare_polldata %>% filter(Morph == "Bumble Bee"),
+             size = 2.5, aes(colour = "BB", shape = "BB", fill = "BB")) + 
+  geom_point(data = visitshare_polldata %>% filter(Morph == "Sweat Bee"),
+             size = 2.5, aes(colour = "SB", shape = "SB", fill = "SB")) +
+  geom_line(data = visitshare_polldata %>% filter(Morph == "Honey Bee"),
+            stat = "smooth",
+            method = "lm",
+            se = F, 
+            # alpha = 0.7,
+            size = 1.25,
+            aes(linetype = "HB",
+                colour = "HB")) +
+  geom_line(data = visitshare_polldata %>% filter(Morph == "Bumble Bee"),
+            stat = "smooth",
+            method = "lm",
+            se = F, 
+            # alpha = 0.7,
+            size = 1.25,
+            aes(linetype = "BB",
+                colour = "BB")) +
+  geom_line(data = visitshare_polldata %>% filter(Morph == "Sweat Bee"),
+            stat = "smooth",
+            method = "lm",
+            se = F, 
+            # alpha = 0.7,
+            size = 1.25,
+            aes(linetype = "SB",
+                colour = "SB")) +
+  geom_smooth(method = "lm", size = 2, colour = "black", se = FALSE) +
+  # coord_cartesian(xlim = c(2, 47), ylim = c(0, 2.5)) +
+  # scale_y_continuous(breaks = seq(0, 2, 0.5)) +
+  scale_x_continuous(breaks = seq(0, 40, 10)) +
+  scale_color_manual(name = "", labels = c("Bumble bee", "Honey bee", "Sweat bee"),
+                     values = cols) +
+  scale_linetype_manual(name = "", labels = c("Bumble bee", "Honey bee", "Sweat bee"),
+                        values = linetype) +
+  scale_fill_manual(name = "", labels = c("Bumble bee", "Honey bee", "Sweat bee"),
+                        values = fill) +
+  scale_shape_manual(name = "", labels = c("Bumble bee", "Honey bee", "Sweat bee"),
+                        values = shape) +
+  ng1 + theme(legend.key.size = unit(1.5, "cm"),
+              legend.position = "top",
+              legend.direction = "horizontal")
+plotPoll_lin
+
+ggsave("analysis/figures/sup-mat/figureS4_visitsPerInf_by_Distance_linear.pdf", 
+       plot = plotPoll_lin, width = 8, height = 6, unit = "in", dpi = 600)
+
+
+#### TABLES: SUPPLEMENTARY MATERIALS ####
+
+#' Creates vector with trait mean and output from standardized and 
+#'     unstandardized regressions
+#'
+#' @param df Dataframe containing variables for regression
+#' @param trait Trait to use as response variable in regression
+#' 
+#' @return model_vector. Trait meanm standardized and unstandardized 
+#'     model betas, p-value, r squared
+summarise_trait_regressions <- function(df, trait){
+  
+  # Retrieve response and predictors vars
+  response_var <- df %>% pull(trait)
+  predictor_var <- df %>% pull(Distance_to_core)
+  
+  # Calculate trait mean
+  trait_mean <- round(df %>% pull(trait) %>% mean(., na.rm = TRUE), 4)
+  
+  # Run unstandardized model
+  unstandard_mod <- lm(response_var ~ predictor_var)
+  
+  # Pull relevant coefficients
+  unstand_beta <- round(summary(unstandard_mod)$coef[2, "Estimate"], 4)
+  pval <- round(summary(unstandard_mod)$coef[2, "Pr(>|t|)"], 4)
+  r_squared <- round(summary(unstandard_mod)$r.squared, 4)
+  
+  # Run regression with mean-standardized traits for all traits except HCN
+  if(!trait == "freqHCN"){
+    
+    stand_trait = paste0(trait, "_C")
+    stand_response_var <- df %>% pull(stand_trait)
+    stand_mod <- lm(stand_response_var ~ predictor_var)
+    stand_beta <- round(summary(stand_mod)$coef[2, "Estimate"], 4)
+
+    model_vector <- c(trait, trait_mean, unstand_beta, stand_beta, pval, r_squared)
+    
+  }else{
+    
+    model_vector <- c(trait, trait_mean, unstand_beta, "NA", pval, r_squared)
+    
+  }
+  
+  return(model_vector)
+  
+}
+
+germTimeVector <- summarise_trait_regressions(famMeans, "Time_to_germination")
+FFVector <- summarise_trait_regressions(famMeans, "Days_to_flower")
+vegBioVector <- summarise_trait_regressions(famMeans, "Veget_biomass")
+bnrLVector <- summarise_trait_regressions(famMeans, "Avg_bnr_lgth")
+stolVector <- summarise_trait_regressions(famMeans, "Avg_stolon_thick")
+HCNVector <- summarise_trait_regressions(famMeans, "freqHCN")
+numInfVector <- summarise_trait_regressions(famMeans, "Num_Inf")
+repBioVector <- summarise_trait_regressions(famMeans, "Reprod_biomass")
+bnrWVector <- summarise_trait_regressions(famMeans, "Avg_bnr_wdth")
+pedVector <- summarise_trait_regressions(famMeans, "Avg_peducle_lgth")
+numFlwrVector <- summarise_trait_regressions(famMeans, "Avg_num_flwrs")
+leafWVector <- summarise_trait_regressions(famMeans, "Avg_leaf_wdth")
+leafLVector <- summarise_trait_regressions(famMeans, "Avg_leaf_lgth")
+petVector <- summarise_trait_regressions(famMeans, "Avg_petiole_lgth")
+
+header <- c("Trait", "Mean", "Unstandarized beta", "Standardized beta", "P-value", "R squared")
+tableS1 <- rbind(germTimeVector, FFVector, vegBioVector, bnrLVector, stolVector, HCNVector,
+                 numInfVector, repBioVector, bnrWVector, pedVector, numFlwrVector, leafWVector,
+                 leafLVector, petVector) %>% 
+  as.data.frame() %>% 
+  setNames(., header)
+
+write_csv(tableS1, "analysis/tables/tableS1_traitRegSummary.csv", col_names = TRUE)
+
 
 #### GENETIC VARIATION ACROSS FAMILIES ####
 
@@ -594,476 +836,6 @@ varFreqHCN <- as.data.frame(VarCorr(freqHCN), comp = "Variance")
 meanFreqHCN <-  mean(commonGardenData$HCN_Results, 
                      na.rm = TRUE)
 CvgFreqHCN <- CVg(varFreqHCN, meanFreqHCN)
-
-# CLINEMAX
-
-# Add clinemax to individuals using species scores from RDA
-# Traits are first standardized by dividing by experiment-wide mean.
-# Standardized trait values are multiplied by their cannonical regression
-# coefficients on RDA. This is done for each trait and then summed. 
-commonGardenData <- commonGardenData %>%
-  mutate(clinemax = 
-           (Time_to_germination / mean(Time_to_germination, na.rm = TRUE)) * species_scores["Germination"] +
-           (Days_to_flower / mean(Days_to_flower, na.rm = TRUE)) * species_scores["Days_to_flower"] +
-           (Num_Inf / mean(Num_Inf, na.rm = TRUE)) * species_scores["Num_Inf"] +
-           (Reprod_biomass / mean(Reprod_biomass, na.rm = TRUE)) * species_scores["Reprod_biomass"] +
-           (Veget_biomass / mean(Veget_biomass, na.rm = TRUE)) * species_scores["Veget_biomass"] +
-           (Avg_bnr_wdth / mean(Avg_bnr_wdth, na.rm = TRUE)) * species_scores["Bnr_wdth"] +
-           (Avg_bnr_lgth / mean(Avg_bnr_lgth, na.rm = TRUE)) * species_scores["Bnr_lgth"] +
-           (Avg_petiole_lgth / mean(Avg_petiole_lgth, na.rm = TRUE)) * species_scores["Petiole_lgth"] +
-           (Avg_peducle_lgth / mean(Avg_peducle_lgth, na.rm = TRUE)) * species_scores["Peducle_lgth"] +
-           (Avg_num_flwrs / mean(Avg_num_flwrs, na.rm = TRUE)) * species_scores["Num_flwrs"] +
-           (Avg_leaf_wdth / mean(Avg_leaf_wdth, na.rm = TRUE)) * species_scores["Leaf_wdth"] +
-           (Avg_leaf_lgth / mean(Avg_leaf_lgth, na.rm = TRUE)) * species_scores["Leaf_lgth"] +
-           (Avg_stolon_thick / mean(Avg_stolon_thick, na.rm = TRUE)) * species_scores["Stolon_thick"] +
-           (HCN_Results / mean(HCN_Results, na.rm = TRUE)) * species_scores["FreqHCN"])
-
-clineMax <- lmer(clinemax ~ (1|Family_unique), 
-                data = commonGardenData, REML = TRUE)
-
-summary(clineMax)
-pvalClineMax <- round(ranova(clineMax)["Pr(>Chisq)"][2, 1], 3)
-varClineMax <- as.data.frame(VarCorr(clineMax), comp = "Variance")
-meanClineMax <-  mean(commonGardenData$clinemax, 
-                     na.rm = TRUE)
-# Absolute value since clinemax scores are negative
-CvgClineMax <- abs(CVg(varClineMax, meanClineMax))
-
-
-#### MODELS FOR TRAIT CHANGE WITH URBANIZATION: FAMILY MEANS ####
-
-# Load in family mean data
-familyMeans <- read_csv("data-clean/experimentalData_familyMeans.csv")
-
-## MODELS ##
-
-# GERMINATION TIME
-germTime_Fam <- lm(Num_Inf ~ Distance_to_core, 
-                   data = familyMeans)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Residuals right skewed and resids vs. fitted shows fanning
-germTime_resids <- residuals(germTime_Fam)
-hist(germTime_resids)
-plot(germTime_Fam)
-plot(Num_Inf ~ Distance_to_core, data = familyMeans)
-abline(germTime_Fam)
-# Summarize. Distance to core significant
-summary(germTime_Fam)
-
-# DAYS TO FIRST FLOWER
-firstFlower <- lmer(Days_to_flower ~ Distance_to_core*HCN_Results + 
-                      (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good
-firstFlower_resids <- residuals(firstFlower)
-hist(firstFlower_resids)
-plot(firstFlower)
-
-# Summarize. No effects.
-summary(firstFlower)
-
-# NUMBER OF INFLORESCENCES
-numInf <- lmer(Num_Inf ~ Distance_to_core*HCN_Results + 
-                      (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good. Some fanning.
-numInf_resids <- residuals(numInf)
-hist(numInf_resids)
-plot(numInf)
-
-# Summarize. No effects.
-summary(numInf)
-
-# REPRODUCTIVE BIOMASS
-repBio <- lmer(Reprod_biomass ~ Distance_to_core*HCN_Results + 
-                 (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good. Some fanning.
-repBio_resids <- residuals(repBio)
-hist(repBio_resids)
-plot(repBio)
-
-# Summarize
-summary(repBio)
-
-# VEGETATIVE BIOMASS. Singular fit issue. No variance assigned to effect of Family.
-vegBio <- lmer(Veget_biomass ~ Distance_to_core + 
-                 (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good.
-vegBio_resids <- residuals(vegBio)
-hist(vegBio_resids)
-plot(vegBio)
-
-# Summarize. Distance significant.
-summary(vegBio)
-
-# BANNER WIDTH
-bnrWdth <- lmer(Avg_bnr_wdth ~ Distance_to_core*HCN_Results + 
-                 (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good.
-bnrWdth_resids <- residuals(bnrWdth)
-hist(bnrWdth_resids)
-plot(bnrWdth)
-
-# Summarize. Disntance, HCN, and interaction significant
-summary(bnrWdth)
-
-# BANNER LENGTH
-bnrLgth <- lmer(Avg_bnr_lgth ~ Distance_to_core*HCN_Results + 
-                  (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good.
-bnrLgth_resids <- residuals(bnrLgth)
-hist(bnrLgth_resids)
-plot(bnrLgth)
-
-# Summarize. Disntance, HCN, and interaction significant
-summary(bnrLgth)
-
-# PETIOLE LENGTH
-petLgth <- lmer(Avg_petiole_lgth ~ Distance_to_core*HCN_Results + 
-                  (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good.
-petLgth_resids <- residuals(petLgth)
-hist(petLgth_resids)
-plot(petLgth)
-
-# Summarize. No effects
-summary(petLgth)
-
-# PEDUNCLE LENGTH. Singular fit issue. No variance assigned to effect of Family.
-pedLgth <- lmer(Avg_peducle_lgth ~ Distance_to_core*HCN_Results + 
-                  (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good.
-pedLgth_resids <- residuals(pedLgth)
-hist(pedLgth_resids)
-plot(pedLgth)
-
-# Summarize. No effects
-summary(pedLgth)
-
-# NUMBER OF FLOWERS
-numFlwr <- lmer(Avg_num_flwrs ~ Distance_to_core*HCN_Results + 
-                  (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good. Slight left skew.
-numFlwr_resids <- residuals(numFlwr)
-hist(numFlwr_resids)
-plot(numFlwr)
-
-# Summarize. No effects
-summary(numFlwr)
-
-# LEAF WIDTH
-leafWdth <- lmer(Avg_leaf_wdth ~ Distance_to_core*HCN_Results + 
-                  (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good.
-leafWdth_resids <- residuals(leafWdth)
-hist(leafWdth_resids)
-plot(leafWdth)
-
-# Summarize. No effects
-summary(leafWdth)
-
-# LEAF LENGTH
-leafLgth <- lmer(Avg_leaf_lgth ~ Distance_to_core*HCN_Results + 
-                   (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good.
-leafLgth_resids <- residuals(leafLgth)
-hist(leafLgth_resids)
-plot(leafLgth)
-
-# Summarize. Distance x HCN interaction marginal.
-summary(leafLgth)
-
-# STOLON THICKNESS
-stolThick <- lmer(Avg_stolon_thick ~ Distance_to_core*HCN_Results + 
-                   (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good.
-stolThick_resids <- residuals(stolThick)
-hist(stolThick_resids)
-plot(stolThick)
-
-# Summarize. No effects.
-summary(stolThick)
-
-# STOLON THICKNESS
-seedPerFlwr <- lmer(Avg_seeds_per_flower ~ Distance_to_core*HCN_Results + 
-                    (1|Population/Family_ID), data = commonGardenData)
-
-# Plot histogram of residuals and resudials vs. fitted.
-# Looks good.
-seedPerFlwr_resids <- residuals(seedPerFlwr)
-hist(seedPerFlwr_resids)
-plot(seedPerFlwr)
-
-# Summarize. Distance marginal.
-summary(seedPerFlwr)
-
-
-## TRAIT CHANGES WITH URBANIZATION: ALL DATA ##
-
-# Plotting effects that were significant from linear models above
-
-# GERMINATION TIME
-# Relationship driven by high germination time outliers in urban pops.
-germTime_plot <- ggplot(commonGardenData, aes(x = Distance_to_core, y = Time_to_germination)) +
-  geom_point(size = 1.5, colour = "black", position = position_dodge(width = 0.1)) +
-  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
-  ng1
-germTime_plot
-
-ggsave("analysis/figures/traitChanges_allData/germinationTime_allData.pdf", 
-       plot = germTime_plot, width = 5, height = 5, unit = "in", dpi = 600)
-
-# Germination time pattern easier to see if visualizing pop-means
-germTime_popMeanPlot <- commonGardenData %>%
-  group_by(Population, Distance_to_core) %>%
-  summarize(mean = mean(Time_to_germination, na.rm = TRUE)) %>%
-  ggplot(., aes(x = Distance_to_core, y = mean)) +
-  geom_point(size = 2, colour = "black") +
-  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
-  ng1
-germTime_popMeanPlot
-
-ggsave("analysis/figures/traitChanges_popMeans/germinationTime_popMeans.pdf", 
-       plot = germTime_popMeanPlot, width = 5, height = 5, unit = "in", dpi = 600)
-
-# BIOMASS
-vegBio_plot <- ggplot(commonGardenData, aes(x = Distance_to_core, y = Veget_biomass)) +
-  geom_point(size = 1.5, colour = "black", position = position_dodge(width = 0.1)) +
-  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
-  ng1
-vegBio_plot
-
-ggsave("analysis/figures/traitChanges_allData/vegetativeBiomass_allData.pdf", 
-       plot = vegBio_plot, width = 5, height = 5, unit = "in", dpi = 600)
-
-# Biomass pattern easier to see if visualizing pop-means
-vegBio_popMeanPlot <- commonGardenData %>%
-  group_by(Population, Distance_to_core) %>%
-  summarize(mean = mean(Veget_biomass, na.rm = TRUE)) %>%
-  ggplot(., aes(x = Distance_to_core, y = mean)) +
-  geom_point(size = 2, colour = "black") +
-  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
-  ng1
-vegBio_popMeanPlot
-
-ggsave("analysis/figures/traitChanges_popMeans/vegetativeBiomass_popMeans.pdf", 
-       plot = vegBio_popMeanPlot, width = 5, height = 5, unit = "in", dpi = 600)
-
-# BANNER WIDTH
-commonGardenData$HCN_Results <- as.factor(commonGardenData$HCN_Results)
-bnrWdth_plot <- ggplot(commonGardenData, aes(x = Distance_to_core, y = Avg_bnr_wdth, group = HCN_Results)) +
-  geom_point(size = 1.5, aes(colour = HCN_Results, shape = HCN_Results), position = position_dodge(width = 0.1)) +
-  geom_smooth(method = "lm", size = 2.0, aes(linetype = HCN_Results, colour = HCN_Results), se = FALSE) +
-  ng1
-bnrWdth_plot
-
-ggsave("analysis/figures/traitChanges_allData/bannerWidth-HCN_allData.pdf", 
-       plot = bnrWdth_plot, width = 6, height = 7, unit = "in", dpi = 600)
-
-# Population mean banner width for HCN+ plants
-bnrWdth_CyanPopMeanPlot <- commonGardenData %>%
-  filter(HCN_Results == "1") %>%
-  group_by(Population, Distance_to_core) %>%
-  summarize(mean = mean(Avg_bnr_wdth, na.rm = TRUE)) %>%
-  ggplot(., aes(x = Distance_to_core, y = mean)) +
-  geom_point(size = 2, colour = "black") +
-  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
-  ng1
-bnrWdth_CyanPopMeanPlot
-
-ggsave("analysis/figures/traitChanges_popMeans/bannerWidth-Cyan_popMeans.pdf", 
-       plot = bnrWdth_CyanPopMeanPlot, width = 5, height = 5, unit = "in", dpi = 600)
-
-# Population mean banner width for HCN- plants
-bnrWdth_AcyanPopMeanPlot <- commonGardenData %>%
-  filter(HCN_Results == "0") %>%
-  group_by(Population, Distance_to_core) %>%
-  summarize(mean = mean(Avg_bnr_wdth, na.rm = TRUE)) %>%
-  ggplot(., aes(x = Distance_to_core, y = mean)) +
-  geom_point(size = 2, colour = "black") +
-  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
-  ng1
-bnrWdth_AcyanPopMeanPlot
-
-ggsave("analysis/figures/traitChanges_popMeans/bannerWidth-Acyan_popMeans.pdf", 
-       plot = bnrWdth_AcyanPopMeanPlot, width = 5, height = 5, unit = "in", dpi = 600)
-
-# BANNER LENGTH
-bnrLgth_plot <- ggplot(commonGardenData, aes(x = Distance_to_core, y = Avg_bnr_lgth, group = HCN_Results)) +
-  geom_point(size = 1.5, aes(colour = HCN_Results, shape = HCN_Results), position = position_dodge(width = 0.1)) +
-  geom_smooth(method = "lm", size = 2.0, aes(linetype = HCN_Results, colour = HCN_Results), se = FALSE) +
-  ng1
-bnrLgth_plot
-
-ggsave("analysis/figures/traitChanges_allData/bannerLength-HCN_allData.pdf", 
-       plot = bnrLgth_plot, width = 6, height = 7, unit = "in", dpi = 600)
-
-# Population mean banner width for HCN+ plants
-bnrLgth_CyanPopMeanPlot <- commonGardenData %>%
-  filter(HCN_Results == "1") %>%
-  group_by(Population, Distance_to_core) %>%
-  summarize(mean = mean(Avg_bnr_lgth, na.rm = TRUE)) %>%
-  ggplot(., aes(x = Distance_to_core, y = mean)) +
-  geom_point(size = 2, colour = "black") +
-  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
-  ng1
-bnrLgth_CyanPopMeanPlot
-
-ggsave("analysis/figures/traitChanges_popMeans/bannerLength-Cyan_popMeans.pdf", 
-       plot = bnrLgth_CyanPopMeanPlot, width = 5, height = 5, unit = "in", dpi = 600)
-
-# Population mean banner width for HCN- plants
-bnrLgth_AcyanPopMeanPlot <- commonGardenData %>%
-  filter(HCN_Results == "0") %>%
-  group_by(Population, Distance_to_core) %>%
-  summarize(mean = mean(Avg_bnr_lgth, na.rm = TRUE)) %>%
-  ggplot(., aes(x = Distance_to_core, y = mean)) +
-  geom_point(size = 2, colour = "black") +
-  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
-  ng1
-bnrLgth_AcyanPopMeanPlot
-
-ggsave("analysis/figures/traitChanges_popMeans/bannerLength-Acyan_popMeans.pdf", 
-       plot = bnrLgth_AcyanPopMeanPlot, width = 5, height = 5, unit = "in", dpi = 600)
-
-#### TRAIT CORRELATIONS ####
-
-# Will assess trait correlations using family means
-
-familyMeans <- read_csv("data-clean/experimentalData_familyMeans.csv")
-traits <- familyMeans %>%
-  select(Time_to_germination, Days_to_flower, Num_Inf, Reprod_biomass,
-         Veget_biomass, Avg_bnr_wdth, Avg_bnr_lgth, Avg_leaf_lgth,
-         Avg_peducle_lgth, Avg_num_flwrs, Avg_leaf_wdth, Avg_petiole_lgth,
-         Avg_stolon_thick, Avg_seeds_per_flower)
-
-## FUNCTIONS ##
-
-##Function for changing upper panel in 'pairs' correlation matrix to show correlation
-#coefficients and p-values
-panel.cor <- function(x, y, digits = 2, cex.cor, ...)
-{
-  usr <- par("usr"); on.exit(par(usr))
-  par(usr = c(0, 1, 0, 1))
-  # correlation coefficient
-  r <- cor(x, y, use = "complete.obs", method = "pearson")
-  txt <- format(c(r, 0.123456789), digits = digits)[1]
-  txt <- paste("r= ", txt, sep = "")
-  text(0.5, 0.6, txt)
-  
-  # p-value calculation
-  p <- cor.test(x, y)$p.value
-  txt2 <- format(c(p, 0.123456789), digits = digits)[1]
-  txt2 <- paste("p= ", txt2, sep = "")
-  if(p<0.01) txt2 <- paste("p= ", "<0.01", sep = "")
-  text(0.5, 0.4, txt2)
-}
-
-#Function to add least squares regression line to lower panel of 'pairs' scatterplot matrix
-lsline = function(x,y) {
-  points(x,y,pch=".")
-  abline(lsfit(x,y),col="blue")
-}
-
-# Trait correlation table
-pairs(traits, upper.panel = panel.cor,lower.panel=lsline)
-
-# With a few exceptions, traits are not strongly correlated
-# Bnr length and bnr width are correlated (r = 0.76) and both traits show the same
-# patten with urbanization. Should these be condensed into a single traits (i.e. flower size).
-# Same is true for leaft length and leaf width.
-
-#### SUPPLEMENTARY ANALYSES ####
-
-#### RDA AND CLINEMAX FOR FAMILY MEANS ####
-
-#### MULTIVARIATE TRAIT CHANGE WITH URBANIZATION: POPULATION MEANS ####
-
-# Load in family mean dataset
-familyMeans <- read_csv("data-clean/experimentalData_familyMeans.csv")
-
-# Subset popMeans datafor use in RDA
-familyMeans_forRDA <- familyMeans %>%
-  na.omit() %>%
-  select(-total_plants, -n_HCN, -Avg_seeds_per_flower) %>%
-  select(Population, Distance_to_core, Time_to_germination:freqHCN)
-
-# Perform RDA with multiple traits as response, distance as sole predictors
-rdaFam <- rda(familyMeans_forRDA %>% 
-                select(Time_to_germination:freqHCN) ~ 
-                familyMeans_forRDA$Distance_to_core,
-              scale = TRUE)
-summary(rdaFam)
-
-# Permutation based test of significance of distance term in RDA
-set.seed(42)
-anova.cca(rdaFam, by = "term", permutations = 1000)
-
-# Extract canonical coefficients of traits onto RDA1 (i.e. 'species scores')
-species_scoresFam <- scores(rdaFam)$species[,"RDA1"]
-
-# Calculate cline_max according to Stock et al. 
-# Traits are first standardized by dividing by experiment-wide mean.
-# Standardized trait values are multiplied by their cannonical regression
-# coefficients on RDA. This is done for each trait and then summed. 
-allData <- allData %>%
-  mutate(clinemax = 
-           (Time_to_germination / mean(Time_to_germination, na.rm = TRUE)) * species_scoresFam["Time_to_germination"] +
-           (Days_to_flower / mean(Days_to_flower, na.rm = TRUE)) * species_scoresFam["Days_to_flower"] +
-           (Num_Inf / mean(Num_Inf, na.rm = TRUE)) * species_scoresFam["Num_Inf"] +
-           (Reprod_biomass / mean(Reprod_biomass, na.rm = TRUE)) * species_scoresFam["Reprod_biomass"] +
-           (Veget_biomass / mean(Veget_biomass, na.rm = TRUE)) * species_scoresFam["Veget_biomass"] +
-           (Avg_bnr_wdth / mean(Avg_bnr_wdth, na.rm = TRUE)) * species_scoresFam["Avg_bnr_wdth"] +
-           (Avg_bnr_lgth / mean(Avg_bnr_lgth, na.rm = TRUE)) * species_scoresFam["Avg_bnr_lgth"] +
-           (Avg_petiole_lgth / mean(Avg_petiole_lgth, na.rm = TRUE)) * species_scoresFam["Avg_petiole_lgth"] +
-           (Avg_peducle_lgth / mean(Avg_peducle_lgth, na.rm = TRUE)) * species_scoresFam["Avg_peducle_lgth"] +
-           (Avg_num_flwrs / mean(Avg_num_flwrs, na.rm = TRUE)) * species_scoresFam["Avg_num_flwrs"] +
-           (Avg_leaf_wdth / mean(Avg_leaf_wdth, na.rm = TRUE)) * species_scoresFam["Avg_leaf_wdth"] +
-           (Avg_leaf_lgth / mean(Avg_leaf_lgth, na.rm = TRUE)) * species_scoresFam["Avg_leaf_lgth"] +
-           (Avg_stolon_thick / mean(Avg_stolon_thick, na.rm = TRUE)) * species_scoresFam["Avg_stolon_thick"] +
-           (freqHCN / mean(freqHCN, na.rm = TRUE)) * species_scoresFam["freqHCN"])
-
-# Model testing for cline in cline_max
-clineMax_modFam <- lm(clinemax ~ Distance_to_core, data = familyMeans)
-summary(clineMax_modFam)
-plot(clinemax ~ Distance_to_core, data = familyMeans)
-abline(clineMax_modFam)
-
-
-#Multiple regression analysis on abundance with distance, without controlling for inf #. 
-Ab <- lm(Num.Ind ~ Distance_to_core*Morph,
-         data = visitshare.polldata)
-summary(Ab)
-Anova(Ab, type = "III")
-
-#Multiple regression analysis on abundance with distance, controlling for inf #. 
-Ab <- lm(Num.Ind ~ Distance_to_core*Morph + Num_Inf,
-         data = visitshare.polldata)
-summary(Ab)
-Anova(Ab, type = "III")
 
 #### FIGURES AND TABLES: SUPPLEMENTAL ####
 
