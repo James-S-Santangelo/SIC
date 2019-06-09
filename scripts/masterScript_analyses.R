@@ -57,6 +57,7 @@ species_scores <- scores(rdaFam)$species[,"RDA1"]
 # Traits are first standardized by dividing by experiment-wide mean.
 # Standardized trait values are multiplied by their cannonical regression
 # coefficients on RDA. This is done for each trait and then summed. 
+indPlantData <- read_csv("data-clean/experimentalData_individualPlants.csv")
 indPlantData <- indPlantData %>% 
   mutate(clinemax = 
            (Time_to_germination_C * species_scores["Time_to_germination_C"]) +
@@ -71,7 +72,8 @@ indPlantData <- indPlantData %>%
            (Avg_num_flwrs_C * species_scores["Avg_num_flwrs_C"]) +
            (Avg_leaf_wdth_C * species_scores["Avg_leaf_wdth_C"]) +
            (Time_to_germination_C * species_scores["Avg_leaf_lgth_C"]) +
-           (Avg_stolon_thick_C * species_scores["Avg_stolon_thick_C"]))
+           (Avg_stolon_thick_C * species_scores["Avg_stolon_thick_C"]) +
+           (HCN_Results * species_scores["freqHCN"]))
   
 famMeans_clineMax <- indPlantData %>% 
   group_by(Population, Family_ID, Distance_to_core) %>% 
