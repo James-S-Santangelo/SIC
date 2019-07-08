@@ -440,7 +440,117 @@ ggsave("analysis/figures/main-text/figure3B_seeds_per_flower.pdf",
 
 ## FIGURE S1
 
-# Figure S1A: Imperv. vs. distance
+# Load in population mean dataset
+popMeans <- read_csv("data-clean/experimentalData_popMeans.csv")
+
+# Subset data for RDA
+popMeans_forRDA <- popMeans %>%
+  # select(-Seeds_per_flower, -Num_Cyano) %>%
+  select(-Avg_seeds_per_flower) %>%
+  select(Population, Distance_to_core, Time_to_germination_C:Avg_stolon_thick_C, freqHCN) %>% 
+  na.omit()
+
+# Perform RDA with multiple traits as response, distance as sole predictors
+rdaPop <- rda(popMeans_forRDA %>% 
+                select(Time_to_germination_C:freqHCN) ~ 
+                popMeans_forRDA$Distance_to_core, 
+              scale = TRUE, na.action = "na.omit")
+summary(rdaPop)
+
+# Permutation based test of significance of distance term in RDA
+set.seed(42)
+anova.cca(rdaPop, by = "term", permutations = 10000)
+
+# Extract canonical coefficients of traits onto RDA1 (i.e. 'species scores')
+species_scoresPop <- scores(rdaPop)$species[,"RDA1"]
+
+# Calculate cline_max according to Stock et al. 
+# Traits are first standardized by dividing by experiment-wide mean.
+# Standardized trait values are multiplied by their cannonical regression
+# coefficients on RDA. This is done for each trait and then summed. 
+indPlantData <- indPlantData %>% 
+  mutate(clinemaxPop = 
+           (Time_to_germination_C * species_scoresPop["Time_to_germination_C"]) +
+           (Days_to_flower_C * species_scoresPop["Days_to_flower_C"]) +
+           (Num_Inf_C * species_scoresPop["Num_Inf_C"]) +
+           (Reprod_biomass_C * species_scoresPop["Reprod_biomass_C"]) +
+           (Veget_biomass_C * species_scoresPop["Veget_biomass_C"]) +
+           (Avg_bnr_wdth_C * species_scoresPop["Avg_bnr_wdth_C"]) +
+           (Avg_bnr_lgth_C * species_scoresPop["Avg_bnr_lgth_C"]) +
+           (Avg_petiole_lgth_C * species_scoresPop["Avg_petiole_lgth_C"]) +
+           (Avg_peducle_lgth_C * species_scoresPop["Avg_peducle_lgth_C"]) +
+           (Avg_num_flwrs_C * species_scoresPop["Avg_num_flwrs_C"]) +
+           (Avg_leaf_wdth_C * species_scoresPop["Avg_leaf_wdth_C"]) +
+           (Time_to_germination_C * species_scoresPop["Avg_leaf_lgth_C"]) +
+           (Avg_stolon_thick_C * species_scoresPop["Avg_stolon_thick_C"]) +
+           (HCN_Results * species_scoresPop["freqHCN"]))
+
+popMeans_clineMax <- indPlantData %>% 
+  group_by(Population, Distance_to_core) %>% 
+  summarise(clinemaxPop = mean(clinemaxPop, na.rm = TRUE))
+
+# Model testing for cline in cline_max
+clineMax_modPop <- lm(clinemaxPop ~ Distance_to_core, data = popMeans_clineMax)
+summary(clineMax_modPop)
+
+# figure S1A #
+
+# Extract RDA1 and PC1 site scores
+df_sitesPop  <- data.frame(scores(rdaPop, display = "sites", scaling = "sites")[,1:2]) %>%
+  # rownames_to_column(var = "Population") %>%
+  # mutate(Population = seq(1:27)) %>%
+  cbind(., popMeans_forRDA %>% select(Population, Distance_to_core))
+
+# Extract RDA1 and PC1 species scores
+df2_speciesPop  <- data.frame(scores(rdaPop, display = "species", scaling = "species")[,1:2])     # loadings for PC1 and PC2
+row.names(df_sitesPop) <- seq(1:27)
+
+# Plot site scores along first 2 axes. Colour points by distance
+rda_plotPop <- ggplot(df_sitesPop, aes(x = RDA1, y = PC1)) + 
+  geom_point(size = 3, shape = 21, colour = "black", aes(fill = Distance_to_core)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  scale_fill_gradient(low = "white", high = "black",
+                      limits = c(0, 50), breaks = seq(0, 50, 10)) +
+  guides(fill = guide_colorbar(ticks = FALSE,
+                               barwidth = 1.5, 
+                               barheight = 15)) +
+  ng1 + theme(legend.position = "right", 
+              legend.direction="vertical",
+              legend.text = element_text(size=15), 
+              legend.key = element_rect(fill = "white"),
+              legend.title = element_blank(),
+              legend.key.size = unit(0.5, "cm"),
+              legend.spacing.x = unit(0.1, "cm")) 
+
+# Add arrows to RDA plot. 
+rda_triplotPop <- rda_plotPop +
+  geom_segment(data = df2_speciesPop, aes(x = 0, xend = RDA1, y=0, yend = PC1), 
+               color = "black", size = 1, arrow = arrow(length = unit(0.02, "npc"))) +
+  geom_text(data = df2_speciesPop, 
+            aes(x = RDA1, y = PC1, label = rownames(df2_speciesPop),
+                hjust = 0.5 * (1 - sign(RDA1)), vjust = 0.5 * (1 - sign(PC1))), 
+            color = "black", size = 2.5) +
+  xlab("RDA1 (2.7%)") + ylab("PC1 (26%)")
+rda_triplotPop
+
+ggsave("analysis/figures/sup-mat/figureS1A_RDA-triplotPop.pdf", 
+       plot = rda_triplotPop, width = 8, height = 6, unit = "in", dpi = 600)
+
+# figure 2B #
+
+clineMax_plotPop <- ggplot(popMeans_clineMax, aes(x = Distance_to_core, y = clinemaxPop)) +
+  geom_point(size = 3, colour = "black") +
+  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
+  ng1
+clineMax_plotPop
+
+ggsave("analysis/figures/sup-mat/figureS1B_clineMaxPop_by_distance.pdf", 
+       plot = clineMax_plotPop, width = 8, height = 6, unit = "in", dpi = 600)
+
+## FIGURE S2
+
+# Figure S2A: Imperv. vs. distance
 imperv_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = Imperv)) +
   geom_point(size = 2.5) +
   geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
@@ -448,10 +558,10 @@ imperv_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = Imperv)) 
   ng1
 imperv_vs_distance
 
-ggsave("analysis/figures/sup-mat/figureS1a_Imperv_vs.distance.pdf", 
+ggsave("analysis/figures/sup-mat/figureS2a_Imperv_vs.distance.pdf", 
        plot = imperv_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
 
-# Figure S1B: Pop Dens vs. distance
+# Figure S2B: Pop Dens vs. distance
 popDens_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = popDens)) +
   geom_point(size = 2.5) +
   geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
@@ -459,11 +569,11 @@ popDens_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = popDens)
   ng1
 popDens_vs_distance
 
-ggsave("analysis/figures/sup-mat/figureS1b_popDens_vs.distance.pdf", 
+ggsave("analysis/figures/sup-mat/figureS2b_popDens_vs.distance.pdf", 
        plot = popDens_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
 
 
-## FIGURE S2
+## FIGURE S3
 
 #' Generates biplot of with response variable against predictor variable
 #'     Writes biplot to disk in outpath.
@@ -497,57 +607,57 @@ create_Biplot <- function(df, response_var, outpath, figID){
 
 outpath <- "analysis/figures/sup-mat/"
 
-# Figure S2a
-create_Biplot(df = famMeans, response_var = "Time_to_germination", 
-              outpath = outpath, figID = "figureS2a")
-# Figure S2b
-create_Biplot(df = famMeans, response_var = "Days_to_flower", 
-              outpath = outpath, figID = "figureS2b")
-# Figure S2c
-create_Biplot(df = famMeans, response_var = "Veget_biomass", 
-              outpath = outpath, figID = "figureS2c")
-# Figure S2d
-create_Biplot(df = famMeans, response_var = "Avg_bnr_lgth", 
-              outpath = outpath, figID = "figureS2d")
-# Figure S2e
-create_Biplot(df = famMeans, response_var = "Avg_stolon_thick", 
-              outpath = outpath, figID = "figureS2e")
-# Figure S2f
-create_Biplot(df = famMeans, response_var = "freqHCN", 
-              outpath = outpath, figID = "figureS2f")
-
-## FIGURE S3
-
 # Figure S3a
-create_Biplot(df = famMeans, response_var = "Num_Inf", 
+create_Biplot(df = famMeans, response_var = "Time_to_germination", 
               outpath = outpath, figID = "figureS3a")
 # Figure S3b
-create_Biplot(df = famMeans, response_var = "Reprod_biomass", 
+create_Biplot(df = famMeans, response_var = "Days_to_flower", 
               outpath = outpath, figID = "figureS3b")
 # Figure S3c
-create_Biplot(df = famMeans, response_var = "Avg_bnr_wdth", 
+create_Biplot(df = famMeans, response_var = "Veget_biomass", 
               outpath = outpath, figID = "figureS3c")
 # Figure S3d
-create_Biplot(df = famMeans, response_var = "Avg_peducle_lgth", 
+create_Biplot(df = famMeans, response_var = "Avg_bnr_lgth", 
               outpath = outpath, figID = "figureS3d")
 # Figure S3e
-create_Biplot(df = famMeans, response_var = "Avg_num_flwrs", 
+create_Biplot(df = famMeans, response_var = "Avg_stolon_thick", 
               outpath = outpath, figID = "figureS3e")
 # Figure S3f
-create_Biplot(df = famMeans, response_var = "Avg_leaf_wdth", 
+create_Biplot(df = famMeans, response_var = "freqHCN", 
               outpath = outpath, figID = "figureS3f")
-# Figure S3g
-create_Biplot(df = famMeans, response_var = "Avg_leaf_lgth", 
-              outpath = outpath, figID = "figureS3g")
-# Figure S3h
-create_Biplot(df = famMeans, response_var = "Avg_petiole_lgth", 
-              outpath = outpath, figID = "figureS3h")
-# Figure S3i
-create_Biplot(df = famMeans, response_var = "sex_asex", 
-              outpath = outpath, figID = "figureS3i")
-
 
 ## FIGURE S4
+
+# Figure S4a
+create_Biplot(df = famMeans, response_var = "Num_Inf", 
+              outpath = outpath, figID = "figureS4a")
+# Figure S4b
+create_Biplot(df = famMeans, response_var = "Reprod_biomass", 
+              outpath = outpath, figID = "figureS4b")
+# Figure S4c
+create_Biplot(df = famMeans, response_var = "Avg_bnr_wdth", 
+              outpath = outpath, figID = "figureS4c")
+# Figure S4d
+create_Biplot(df = famMeans, response_var = "Avg_peducle_lgth", 
+              outpath = outpath, figID = "figureS4d")
+# Figure S4e
+create_Biplot(df = famMeans, response_var = "Avg_num_flwrs", 
+              outpath = outpath, figID = "figureS4e")
+# Figure S4f
+create_Biplot(df = famMeans, response_var = "Avg_leaf_wdth", 
+              outpath = outpath, figID = "figureS4f")
+# Figure S4g
+create_Biplot(df = famMeans, response_var = "Avg_leaf_lgth", 
+              outpath = outpath, figID = "figureS4g")
+# Figure S4h
+create_Biplot(df = famMeans, response_var = "Avg_petiole_lgth", 
+              outpath = outpath, figID = "figureS4h")
+# Figure S4i
+create_Biplot(df = famMeans, response_var = "sex_asex", 
+              outpath = outpath, figID = "figureS4i")
+
+
+## FIGURE S5
 
 cols <- c("BB"="#FF0000","HB"="#F2AD00","SB"="#5BBCD6")
 linetype <- c("BB"="dashed","HB"="dotted","SB"="dotdash")
@@ -604,7 +714,7 @@ plotPoll_lin <-
               legend.direction = "horizontal")
 plotPoll_lin
 
-ggsave("analysis/figures/sup-mat/figureS4_visitsPerInf_by_Distance_linear.pdf", 
+ggsave("analysis/figures/sup-mat/figureS5_visitsPerInf_by_Distance_linear.pdf", 
        plot = plotPoll_lin, width = 8, height = 6, unit = "in", dpi = 600)
 
 
@@ -678,194 +788,3 @@ tableS1 <- rbind(germTimeVector, FFVector, vegBioVector, bnrLVector, stolVector,
   setNames(., header)
 
 write_csv(tableS1, "analysis/tables/tableS1_traitRegSummary.csv", col_names = TRUE)
-
-
-#### GENETIC VARIATION ACROSS FAMILIES ####
-
-##Function for calculating coefficient of genotypic variance
-#x is a variance dataframe and y is trait mean
-CVg <- function(x,y) {
-  100 * (sqrt(x$vcov[1])/y)
-}
-
-# Load in family means dataset
-# Create unique family ID column
-commonGardenData <- read_csv("data-clean/experimentalData_individualPlants.csv") %>%
-  mutate(Family_unique = interaction(Population, Family_ID))
-
-# Run models with family as a random effect
-
-# GERMINATION TIME
-germTime <- lmer(Time_to_germination ~ (1|Family_unique), 
-                 data = commonGardenData, REML = TRUE)
-summary(germTime)
-pvalGermTime <- round(ranova(germTime)["Pr(>Chisq)"][2, 1], 3)
-varGermTime <- as.data.frame(VarCorr(germTime), comp = "Variance")
-meanGermTime <-  mean(commonGardenData$Time_to_germination, na.rm = TRUE)
-CvgGermTime <- CVg(varGermTime, meanGermTime)
-
-# DAYS TO FIRST FLOWER
-firstFlower <- lmer(Days_to_flower ~ (1|Family_unique),
-                   data = commonGardenData, REML = TRUE)
-
-summary(firstFlower)
-pvalFirstFlower <- round(ranova(firstFlower)["Pr(>Chisq)"][2, 1], 3)
-varFirstFlower <- as.data.frame(VarCorr(firstFlower), comp = "Variance")
-meanFirstFlower <-  mean(commonGardenData$Days_to_flower, na.rm = TRUE)
-CvgFirstFlower <- CVg(varFirstFlower, meanFirstFlower)
-
-# NUMBER OF INFLORESCENCES
-numInf <- lmer(Num_Inf ~ (1|Family_unique), 
-               data = commonGardenData, REML = TRUE)
-
-summary(numInf)
-pvalNumInf <- round(ranova(numInf)["Pr(>Chisq)"][2, 1], 3)
-varNumInf <- as.data.frame(VarCorr(numInf), comp = "Variance")
-meanNumInf <-  mean(commonGardenData$Num_Inf, na.rm = TRUE)
-CvgNumInf <- CVg(varNumInf, meanNumInf)
-
-# REPRODUCTIVE BIOMASS
-repBio <- lmer(Reprod_biomass ~ (1|Family_unique), 
-               data = commonGardenData, REML = TRUE)
-
-summary(repBio)
-pvalRepBio <- round(ranova(repBio)["Pr(>Chisq)"][2, 1], 3)
-varRepBio <- as.data.frame(VarCorr(repBio), comp = "Variance")
-meanRepBio <-  mean(commonGardenData$Reprod_biomass, na.rm = TRUE)
-CvgRepBio <- CVg(varRepBio, meanRepBio)
-
-# VEGETATIVE BIOMASS
-vegBio <- lmer(Veget_biomass ~ (1|Family_unique), 
-               data = commonGardenData, REML = TRUE)
-
-summary(vegBio)
-pvalVegBio <- round(ranova(vegBio)["Pr(>Chisq)"][2, 1], 3)
-varVegBio <- as.data.frame(VarCorr(vegBio), comp = "Variance")
-meanVegBio <-  mean(commonGardenData$Veget_biomass, na.rm = TRUE)
-CvgVegBio <- CVg(varVegBio, meanVegBio)
-
-# BANNER WIDTH
-bnrWdth <- lmer(Avg_bnr_wdth ~ (1|Family_unique), 
-               data = commonGardenData, REML = TRUE)
-
-summary(bnrWdth)
-pvalBnrWdth <- round(ranova(bnrWdth)["Pr(>Chisq)"][2, 1], 3)
-varBnrWdth <- as.data.frame(VarCorr(bnrWdth), comp = "Variance")
-meanBnrWdth <-  mean(commonGardenData$Avg_bnr_wdth, na.rm = TRUE)
-CvgBnrWdth <- CVg(varBnrWdth, meanBnrWdth)
-
-# BANNER WIDTH
-bnrLgth <- lmer(Avg_bnr_lgth ~ (1|Family_unique), 
-                data = commonGardenData, REML = TRUE)
-
-summary(bnrLgth)
-pvalBnrLgth <- round(ranova(bnrLgth)["Pr(>Chisq)"][2, 1], 3)
-varBnrLgth <- as.data.frame(VarCorr(bnrLgth), comp = "Variance")
-meanBnrLgth <-  mean(commonGardenData$Avg_bnr_lgth, na.rm = TRUE)
-CvgBnrLgth <- CVg(varBnrLgth, meanBnrLgth)
-
-# PETIOLE LENGTH
-petLgth <- lmer(Avg_petiole_lgth ~ (1|Family_unique), 
-                data = commonGardenData, REML = TRUE)
-
-summary(petLgth)
-pvalPetLgth <- round(ranova(petLgth)["Pr(>Chisq)"][2, 1], 3)
-varPetLgth <- as.data.frame(VarCorr(petLgth), comp = "Variance")
-meanPetLgth <-  mean(commonGardenData$Avg_petiole_lgth, na.rm = TRUE)
-CvgPetLgth <- CVg(varPetLgth, meanPetLgth)
-
-# PEDUNCLE LENGTH
-pedLgth <- lmer(Avg_peducle_lgth ~ (1|Family_unique), 
-                data = commonGardenData, REML = TRUE)
-
-summary(pedLgth)
-pvalPedLgth <- round(ranova(pedLgth)["Pr(>Chisq)"][2, 1], 3)
-varPedLgth <- as.data.frame(VarCorr(pedLgth), comp = "Variance")
-meanPedLgth <-  mean(commonGardenData$Avg_peducle_lgth, na.rm = TRUE)
-CvgPedLgth <- CVg(varPedLgth, meanPedLgth)
-
-# LEAF WIDTH
-leafWdth <- lmer(Avg_leaf_wdth ~ (1|Family_unique), 
-                data = commonGardenData, REML = TRUE)
-
-summary(leafWdth)
-pvalLeafWdth <- round(ranova(leafWdth)["Pr(>Chisq)"][2, 1], 3)
-varLeafWdth <- as.data.frame(VarCorr(leafWdth), comp = "Variance")
-meanLeafWdth <-  mean(commonGardenData$Avg_leaf_wdth, na.rm = TRUE)
-CvgLeafWdth <- CVg(varLeafWdth, meanLeafWdth)
-
-# LEAF LENGTH
-leafLgth <- lmer(Avg_leaf_lgth ~ (1|Family_unique), 
-                 data = commonGardenData, REML = TRUE)
-
-summary(leafLgth)
-pvalLeafLgth <- round(ranova(leafLgth)["Pr(>Chisq)"][2, 1], 3)
-varLeafLgth <- as.data.frame(VarCorr(leafLgth), comp = "Variance")
-meanLeafLgth <-  mean(commonGardenData$Avg_leaf_lgth, na.rm = TRUE)
-CvgLeafLgth <- CVg(varLeafLgth, meanLeafLgth)
-
-# STOLON THICKNESS
-stolThick <- lmer(Avg_stolon_thick ~ (1|Family_unique), 
-                 data = commonGardenData, REML = TRUE)
-
-summary(stolThick)
-pvalStolThick <- round(ranova(stolThick)["Pr(>Chisq)"][2, 1], 3)
-varStolThick <- as.data.frame(VarCorr(stolThick), comp = "Variance")
-meanStolThick <-  mean(commonGardenData$Avg_stolon_thick, na.rm = TRUE)
-CvgStolThick <- CVg(varStolThick, meanStolThick)
-
-# NUMBER OF FLOWERS
-numFlwr <- lmer(Avg_num_flwrs ~ (1|Family_unique), 
-                  data = commonGardenData, REML = TRUE)
-
-summary(numFlwr)
-pvalNumFlwr <- round(ranova(numFlwr)["Pr(>Chisq)"][2, 1], 3)
-varNumFlwr <- as.data.frame(VarCorr(numFlwr), comp = "Variance")
-meanNumFlwr <-  mean(commonGardenData$Avg_num_flwrs, na.rm = TRUE)
-CvgNumFlwr <- CVg(varNumFlwr, meanNumFlwr)
-
-# SEX/ASEX
-sexAsex <- lmer((Reprod_biomass / Veget_biomass) ~ (1|Family_unique), 
-                data = commonGardenData, REML = TRUE)
-
-summary(sexAsex)
-pvalSexAsex <- round(ranova(sexAsex)["Pr(>Chisq)"][2, 1], 3)
-varSexAsex <- as.data.frame(VarCorr(sexAsex), comp = "Variance")
-meanSexAsex <-  mean(commonGardenData$Reprod_biomass / commonGardenData$Veget_biomass, 
-                     na.rm = TRUE)
-CvgSexAsex <- CVg(varSexAsex, meanSexAsex)
-
-# HCN PRESENCE/ABSENCE
-freqHCN <- lmer(HCN_Results ~ (1|Family_unique), 
-                data = commonGardenData, REML = TRUE)
-
-summary(freqHCN)
-pvalFreqHCN <- round(ranova(freqHCN)["Pr(>Chisq)"][2, 1], 3)
-varFreqHCN <- as.data.frame(VarCorr(freqHCN), comp = "Variance")
-meanFreqHCN <-  mean(commonGardenData$HCN_Results, 
-                     na.rm = TRUE)
-CvgFreqHCN <- CVg(varFreqHCN, meanFreqHCN)
-
-#### FIGURES AND TABLES: SUPPLEMENTAL ####
-
-trait <- c("Banner length", "Banner width", "Clinemax", "Days to first flower",
-           "Cyanogenesis", "Germination time", "Leaf length", "Leaf width",
-           "Number of flowers", "Number of inflorescences", "Peduncle length",
-           "Petiole length", "Reproductive biomass", "Sex/Asex ratio",
-           "Stolon thickness", "Vegetative biomass")
-means <- c(meanBnrLgth, meanBnrWdth, meanClineMax, meanFirstFlower,
-           meanFreqHCN, meanGermTime, meanLeafLgth, meanLeafWdth,
-           meanNumFlwr, meanNumInf, meanPedLgth, meanPetLgth, 
-           meanRepBio, meanSexAsex, meanStolThick, meanVegBio)
-CVGs <- c(CvgBnrLgth, CvgBnrWdth, CvgClineMax, CvgFirstFlower,
-          CvgFreqHCN, CvgGermTime, CvgLeafLgth, CvgLeafWdth,
-          CvgNumFlwr, CvgNumInf, CvgPedLgth, CvgPetLgth, 
-          CvgRepBio, CvgSexAsex, CvgStolThick, CvgVegBio)
-pvals <- c(pvalBnrLgth, pvalBnrWdth, pvalClineMax, pvalFirstFlower,
-           pvalFreqHCN, pvalGermTime, pvalLeafLgth, pvalLeafWdth,
-           pvalNumFlwr, pvalNumInf, pvalPedLgth, pvalPetLgth, 
-           pvalRepBio, pvalSexAsex, pvalStolThick, pvalVegBio) / 2
-
-dfCVG <- as.data.frame(cbind(trait, means, CVGs, pvals))
-
-write_csv(dfCVG, "analysis/tables/geneticVar.csv")
