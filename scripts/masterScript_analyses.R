@@ -507,7 +507,7 @@ row.names(df_sitesPop) <- seq(1:27)
 
 # Plot site scores along first 2 axes. Colour points by distance
 rda_plotPop <- ggplot(df_sitesPop, aes(x = RDA1, y = PC1)) + 
-  geom_point(size = 3, shape = 21, colour = "black", aes(fill = Distance_to_core)) +
+  geom_point(size = 3.5, shape = 21, colour = "black", aes(fill = Distance_to_core)) +
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_vline(xintercept = 0, linetype = "dotted") +
   scale_fill_gradient(low = "white", high = "black",
@@ -540,7 +540,7 @@ ggsave("analysis/figures/sup-mat/figureS1A_RDA-triplotPop.pdf",
 # figure 2B #
 
 clineMax_plotPop <- ggplot(popMeans_clineMax, aes(x = Distance_to_core, y = clinemaxPop)) +
-  geom_point(size = 3, colour = "black") +
+  geom_point(size = 3.5, colour = "black") +
   geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
   ng1
 clineMax_plotPop
