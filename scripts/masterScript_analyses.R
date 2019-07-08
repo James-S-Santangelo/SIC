@@ -206,6 +206,12 @@ visitshare_polldata <- complete_polldata %>%
   # replace NA in visits/inf with zero
   mutate(Visits_per_Inf = replace_na(Visits_per_Inf, 0))
 
+# Means and SDs for number of visits per inflorescence by morph
+visitshare_polldata %>% 
+  group_by(Morph) %>% 
+  summarise(mean = mean(Visits_per_Inf),
+            sd = sd(Visits_per_Inf))
+
 # Square root transform visits per inflorescence to improve normality of model residuals
 visitshare_polldata$sqRootVisInf <- sqrt(visitshare_polldata$Visits_per_Inf)
 
