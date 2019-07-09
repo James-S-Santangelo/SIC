@@ -10,3 +10,5 @@ gis/
 *.svg 
 *.pdf 
 packrat/src/
+scripts/KT_analysis_scripts/
+analysis/kt_figures/
