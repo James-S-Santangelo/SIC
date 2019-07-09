@@ -51,7 +51,8 @@ summary(rdaFam)
 
 # Permutation based test of significance of distance term in RDA
 set.seed(42)
-anova.cca(rdaFam, by = "term", permutations = 10000)
+rdaFam_anova <- anova.cca(rdaFam, by = "term", permutations = 10000)
+rdaFam_anovaStats <- permustats(rdaFam_anova)
 
 # Extract canonical coefficients of traits onto RDA1 (i.e. 'species scores')
 species_scores <- scores(rdaFam)$species[,"RDA1"]
@@ -537,7 +538,7 @@ rda_triplotPop
 ggsave("analysis/figures/sup-mat/figureS1A_RDA-triplotPop.pdf", 
        plot = rda_triplotPop, width = 8, height = 6, unit = "in", dpi = 600)
 
-# figure 2B #
+# figure S1B #
 
 clineMax_plotPop <- ggplot(popMeans_clineMax, aes(x = Distance_to_core, y = clinemaxPop)) +
   geom_point(size = 3.5, colour = "black") +
@@ -575,6 +576,23 @@ ggsave("analysis/figures/sup-mat/figureS2b_popDens_vs.distance.pdf",
 
 ## FIGURE S3
 
+rdaFam_permuteDist <- data.frame(rdaFam_anovaStats$permutations) %>% 
+  rename("permutations" = "rdaFam_anovaStats.permutations") %>%  
+  ggplot(., aes(x = permutations)) +
+  geom_histogram(fill = "white", colour = "black") + 
+  xlab("F-statistic") + ylab("Count") + 
+  coord_cartesian(xlim = c(0, 5.55)) + scale_x_continuous(breaks = seq(0, 5, 1)) +
+  geom_vline(xintercept = rdaFam_anovaStats$statistic, linetype = "dashed",
+             size = 1) +
+  ng1
+rdaFam_permuteDist
+
+ggsave("analysis/figures/sup-mat/figureS3_rdaFam_permuteDist.pdf", 
+       plot = rdaFam_permuteDist, width = 8, height = 6, unit = "in", dpi = 600)
+
+
+## FIGURE S4
+
 #' Generates biplot of with response variable against predictor variable
 #'     Writes biplot to disk in outpath.
 #'
@@ -607,57 +625,57 @@ create_Biplot <- function(df, response_var, outpath, figID){
 
 outpath <- "analysis/figures/sup-mat/"
 
-# Figure S3a
-create_Biplot(df = famMeans, response_var = "Time_to_germination", 
-              outpath = outpath, figID = "figureS3a")
-# Figure S3b
-create_Biplot(df = famMeans, response_var = "Days_to_flower", 
-              outpath = outpath, figID = "figureS3b")
-# Figure S3c
-create_Biplot(df = famMeans, response_var = "Veget_biomass", 
-              outpath = outpath, figID = "figureS3c")
-# Figure S3d
-create_Biplot(df = famMeans, response_var = "Avg_bnr_lgth", 
-              outpath = outpath, figID = "figureS3d")
-# Figure S3e
-create_Biplot(df = famMeans, response_var = "Avg_stolon_thick", 
-              outpath = outpath, figID = "figureS3e")
-# Figure S3f
-create_Biplot(df = famMeans, response_var = "freqHCN", 
-              outpath = outpath, figID = "figureS3f")
-
-## FIGURE S4
-
 # Figure S4a
-create_Biplot(df = famMeans, response_var = "Num_Inf", 
+create_Biplot(df = famMeans, response_var = "Time_to_germination", 
               outpath = outpath, figID = "figureS4a")
 # Figure S4b
-create_Biplot(df = famMeans, response_var = "Reprod_biomass", 
+create_Biplot(df = famMeans, response_var = "Days_to_flower", 
               outpath = outpath, figID = "figureS4b")
 # Figure S4c
-create_Biplot(df = famMeans, response_var = "Avg_bnr_wdth", 
+create_Biplot(df = famMeans, response_var = "Veget_biomass", 
               outpath = outpath, figID = "figureS4c")
 # Figure S4d
-create_Biplot(df = famMeans, response_var = "Avg_peducle_lgth", 
+create_Biplot(df = famMeans, response_var = "Avg_bnr_lgth", 
               outpath = outpath, figID = "figureS4d")
 # Figure S4e
-create_Biplot(df = famMeans, response_var = "Avg_num_flwrs", 
+create_Biplot(df = famMeans, response_var = "Avg_stolon_thick", 
               outpath = outpath, figID = "figureS4e")
 # Figure S4f
-create_Biplot(df = famMeans, response_var = "Avg_leaf_wdth", 
+create_Biplot(df = famMeans, response_var = "freqHCN", 
               outpath = outpath, figID = "figureS4f")
-# Figure S4g
-create_Biplot(df = famMeans, response_var = "Avg_leaf_lgth", 
-              outpath = outpath, figID = "figureS4g")
-# Figure S4h
-create_Biplot(df = famMeans, response_var = "Avg_petiole_lgth", 
-              outpath = outpath, figID = "figureS4h")
-# Figure S4i
-create_Biplot(df = famMeans, response_var = "sex_asex", 
-              outpath = outpath, figID = "figureS4i")
-
 
 ## FIGURE S5
+
+# Figure S5a
+create_Biplot(df = famMeans, response_var = "Num_Inf", 
+              outpath = outpath, figID = "figureS5a")
+# Figure S5b
+create_Biplot(df = famMeans, response_var = "Reprod_biomass", 
+              outpath = outpath, figID = "figureS5b")
+# Figure S5c
+create_Biplot(df = famMeans, response_var = "Avg_bnr_wdth", 
+              outpath = outpath, figID = "figureS5c")
+# Figure S5d
+create_Biplot(df = famMeans, response_var = "Avg_peducle_lgth", 
+              outpath = outpath, figID = "figureS5d")
+# Figure S5e
+create_Biplot(df = famMeans, response_var = "Avg_num_flwrs", 
+              outpath = outpath, figID = "figureS5e")
+# Figure S5f
+create_Biplot(df = famMeans, response_var = "Avg_leaf_wdth", 
+              outpath = outpath, figID = "figureS5f")
+# Figure S5g
+create_Biplot(df = famMeans, response_var = "Avg_leaf_lgth", 
+              outpath = outpath, figID = "figureS5g")
+# Figure S5h
+create_Biplot(df = famMeans, response_var = "Avg_petiole_lgth", 
+              outpath = outpath, figID = "figureS5h")
+# Figure S5i
+create_Biplot(df = famMeans, response_var = "sex_asex", 
+              outpath = outpath, figID = "figureS5i")
+
+
+## FIGURE S6
 
 cols <- c("BB"="#FF0000","HB"="#F2AD00","SB"="#5BBCD6")
 linetype <- c("BB"="dashed","HB"="dotted","SB"="dotdash")
@@ -714,7 +732,7 @@ plotPoll_lin <-
               legend.direction = "horizontal")
 plotPoll_lin
 
-ggsave("analysis/figures/sup-mat/figureS5_visitsPerInf_by_Distance_linear.pdf", 
+ggsave("analysis/figures/sup-mat/figureS6_visitsPerInf_by_Distance_linear.pdf", 
        plot = plotPoll_lin, width = 8, height = 6, unit = "in", dpi = 600)
 
 
