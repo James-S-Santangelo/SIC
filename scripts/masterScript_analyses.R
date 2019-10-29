@@ -1,28 +1,3 @@
-
-
-## Required by other scripts. Will eventually be migrated.
-# install.packages("psych")
-# install.packages("cowplot")
-# install.packages("RcppEigen")
-# install.packages("mnormt")
-# install.packages("BH")
-# install.packages("plogr")
-
-# # Commands used to initialize packrat. 
-# packrat::init(restart = TRUE, enter = FALSE, infer.dependencies = FALSE)
-# packrat::on()
-# 
-# # install packages (these packages are loaded in this script)
-# install.packages("lme4", dependencies = TRUE)
-# install.packages("lmerTest", dependencies = TRUE)
-# install.packages("tidyverse", dependencies = TRUE)
-# install.packages("vegan", dependencies = TRUE)
-# install.packages("car", dependencies = TRUE)
-# 
-# # .libPaths()
-# packrat::status()
-# packrat::snapshot(infer.dependencies = FALSE)
-
 # Load require packages
 library(lme4)
 library(lmerTest)
