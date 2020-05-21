@@ -1,6 +1,6 @@
 ##### Project: Sex in the City (SIC)
 ##### Manuscript: Multivariate phenotypic divergence along and urbanization gradient
-##### Authors: James S. Santangelo, Ken A. Thompson, Beata Cohan, Jibran Syed, Rob W. Ness, and Marc T. J. Johnson
+##### Authors: James S. Santangelo, L. Ruth Rivkin, Carole Advenard, and Ken A. Thompson
 
 There is a prepring of this project available on [bioRxiv](https://www.biorxiv.org/content/10.1101/699017v2.full.pdf+html)
 
