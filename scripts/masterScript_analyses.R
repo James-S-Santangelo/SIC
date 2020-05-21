@@ -14,15 +14,13 @@ popMeans <- read_csv("data-clean/experimentalData_popMeans.csv") %>%
   mutate(freqHCN_C = freqHCN / mean(freqHCN)) %>% 
   dplyr::select(-freqHCN)
 
-# Variance-covariance matrix of population trait means
-var_covar <- cov(popMeans)
-
-# Perform PCA on variance-covariance matrix and
-# extract PC1 (i.e., Dmax). This is the linear 
-# combination of traits that shows the greatest
+# Perform PCA on population trait means and
+# extract PC1 of the rotation (i.e., variance-covariance matirx). 
+# This is Dmax, the linear  combination of traits that shows the greatest
 # variance among populations
-var_covar_PCA <- prcomp(as.matrix(var_covar))
-PCscores <- scores(var_covar_PCA)[,'PC1']
+popMeans_PCA <- prcomp(as.matrix(popMeans))
+summary(popMeans_PCA) # 71.2% variation explained by PC1
+trait_loadings <- popMeans_PCA$rotation[,'PC1']
 
 # Calculate Dmax for each individual according to Stock et al. 
 # Standardized trait values are multiplied by their loadings
@@ -30,29 +28,36 @@ PCscores <- scores(var_covar_PCA)[,'PC1']
 indPlantData <- read_csv("data-clean/experimentalData_individualPlants.csv")
 indPlantData <- indPlantData %>% 
   mutate(dmax = 
-           (Time_to_germination_C * PCscores["Time_to_germination_C"]) +
-           (Days_to_flower_C * PCscores["Days_to_flower_C"]) +
-           (Num_Inf_C * PCscores["Num_Inf_C"]) +
-           (Reprod_biomass_C * PCscores["Reprod_biomass_C"]) +
-           (Veget_biomass_C * PCscores["Veget_biomass_C"]) +
-           (Avg_bnr_wdth_C * PCscores["Avg_bnr_wdth_C"]) +
-           (Avg_bnr_lgth_C * PCscores["Avg_bnr_lgth_C"]) +
-           (Avg_petiole_lgth_C * PCscores["Avg_petiole_lgth_C"]) +
-           (Avg_peducle_lgth_C * PCscores["Avg_peducle_lgth_C"]) +
-           (Avg_num_flwrs_C * PCscores["Avg_num_flwrs_C"]) +
-           (Avg_leaf_wdth_C * PCscores["Avg_leaf_wdth_C"]) +
-           (Time_to_germination_C * PCscores["Avg_leaf_lgth_C"]) +
-           (Avg_stolon_thick_C * PCscores["Avg_stolon_thick_C"]) +
-           (HCN_Results * PCscores["freqHCN_C"]))
+           (Time_to_germination_C * trait_loadings["Time_to_germination_C"]) +
+           (Days_to_flower_C * trait_loadings["Days_to_flower_C"]) +
+           (Num_Inf_C * trait_loadings["Num_Inf_C"]) +
+           (Reprod_biomass_C * trait_loadings["Reprod_biomass_C"]) +
+           (Veget_biomass_C * trait_loadings["Veget_biomass_C"]) +
+           (Avg_bnr_wdth_C * trait_loadings["Avg_bnr_wdth_C"]) +
+           (Avg_bnr_lgth_C * trait_loadings["Avg_bnr_lgth_C"]) +
+           (Avg_petiole_lgth_C * trait_loadings["Avg_petiole_lgth_C"]) +
+           (Avg_peducle_lgth_C * trait_loadings["Avg_peducle_lgth_C"]) +
+           (Avg_num_flwrs_C * trait_loadings["Avg_num_flwrs_C"]) +
+           (Avg_leaf_wdth_C * trait_loadings["Avg_leaf_wdth_C"]) +
+           (Time_to_germination_C * trait_loadings["Avg_leaf_lgth_C"]) +
+           (Avg_stolon_thick_C * trait_loadings["Avg_stolon_thick_C"]) +
+           (HCN_Results * trait_loadings["freqHCN_C"]))
 
 
 famMeans_Dmax <- indPlantData %>% 
-  group_by(Population, Family_ID, Distance_to_core) %>% 
+  group_by(Family, Distance_to_core) %>% 
   summarise(dmax = mean(dmax, na.rm = TRUE))
 
 # Model testing for cline in dmax
 damx_mod <- lm(dmax ~ Distance_to_core, data = famMeans_Dmax)
 summary(damx_mod)
+
+
+dMax_plot <- ggplot(famMeans_Dmax, aes(x = Distance_to_core, y = dmax)) +
+  geom_point(size = 3, colour = "black") +
+  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
+  ng1
+dMax_plot
 
 ### Cline max ###
 
@@ -63,14 +68,16 @@ famMeans <- read_csv("data-clean/experimentalData_familyMeans.csv")
 famMeans_forRDA <- famMeans %>%
   # select(-Seeds_per_flower, -Num_Cyano) %>%
   dplyr::select(-total_plants, -n_HCN, -Avg_seeds_per_flower) %>%
-  dplyr::select(Population, Distance_to_core, Family_ID, Time_to_germination_C:Avg_stolon_thick_C, freqHCN) %>% 
+  dplyr::select(Population, Distance_to_core, Family, Time_to_germination_C:Avg_stolon_thick_C, freqHCN) %>% 
+  mutate(freqHCN_C = freqHCN / mean(freqHCN, na.rm = TRUE)) %>% 
+  dplyr::select(-freqHCN) %>% 
   na.omit()
 
 # Perform RDA with multiple traits as response, distance as sole predictors
 rdaFam <- rda(famMeans_forRDA %>% 
-                     select(Time_to_germination_C:freqHCN) ~ 
+                     select(Time_to_germination_C:freqHCN_C) ~ 
                 famMeans_forRDA$Distance_to_core, 
-              scale = TRUE, na.action = "na.omit")
+              na.action = "na.omit")
 summary(rdaFam)
 
 # Permutation based test of significance of distance term in RDA
@@ -101,10 +108,10 @@ indPlantData <- indPlantData %>%
            (Avg_leaf_wdth_C * species_scores["Avg_leaf_wdth_C"]) +
            (Time_to_germination_C * species_scores["Avg_leaf_lgth_C"]) +
            (Avg_stolon_thick_C * species_scores["Avg_stolon_thick_C"]) +
-           (HCN_Results * species_scores["freqHCN"]))
+           (HCN_Results * species_scores["freqHCN_C"]))
   
 famMeans_clineMax <- indPlantData %>% 
-  group_by(Population, Family_ID, Distance_to_core) %>% 
+  group_by(Family, Distance_to_core) %>% 
   summarise(clinemax = mean(clinemax, na.rm = TRUE))
 
 # Model testing for cline in cline_max
