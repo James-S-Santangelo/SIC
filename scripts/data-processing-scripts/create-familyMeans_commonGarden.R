@@ -5,7 +5,7 @@ experimental_data <- read_csv("data-clean/experimentalData_individualPlants.csv"
 
 # Create family means dataset
 familyMeans <- experimental_data %>%
-  group_by(Population, Latitude, Longitude, Family_ID, Distance_to_core, Distance_to_cg) %>%
+  group_by(Family, Latitude, Longitude, Distance_to_core, Distance_to_cg) %>%
   summarize(num_plants = n(),
             Time_to_germination = mean(Time_to_germination, na.rm = TRUE),
             Days_to_flower = mean(Days_to_flower, na.rm = TRUE),
@@ -37,7 +37,9 @@ familyMeans <- experimental_data %>%
             Avg_num_flwrs_C = mean(Avg_num_flwrs_C, na.rm = TRUE),
             Avg_leaf_wdth_C = mean(Avg_leaf_wdth_C, na.rm = TRUE),
             Avg_leaf_lgth_C = mean(Avg_leaf_lgth_C, na.rm = TRUE),
-            Avg_stolon_thick_C = mean(Avg_stolon_thick_C, na.rm = TRUE))
+            Avg_stolon_thick_C = mean(Avg_stolon_thick_C, na.rm = TRUE)) %>% 
+  separate(Family, sep = "_", into = c("Population", "Family_ID"), remove = FALSE) %>% 
+  dplyr::select(-Family_ID)
 
 # Write family means to disk
 write_csv(familyMeans, "data-clean/experimentalData_familyMeans.csv")
