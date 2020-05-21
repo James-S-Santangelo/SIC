@@ -7,14 +7,63 @@ library(car)
 
 #### MULTIVARIATE TRAIT CHANGE WITH URBANIZATION: FAMILY MEANS ####
 
+### Dmax ###
+
+popMeans <- read_csv("data-clean/experimentalData_popMeans.csv") %>% 
+  dplyr::select(Time_to_germination_C:Avg_stolon_thick_C, freqHCN) %>% 
+  mutate(freqHCN_C = freqHCN / mean(freqHCN)) %>% 
+  dplyr::select(-freqHCN)
+
+# Variance-covariance matrix of population trait means
+var_covar <- cov(popMeans)
+
+# Perform PCA on variance-covariance matrix and
+# extract PC1 (i.e., Dmax). This is the linear 
+# combination of traits that shows the greatest
+# variance among populations
+var_covar_PCA <- prcomp(as.matrix(var_covar))
+PCscores <- scores(var_covar_PCA)[,'PC1']
+
+# Calculate Dmax for each individual according to Stock et al. 
+# Standardized trait values are multiplied by their loadings
+# onto PC1. This is done for each trait and then summed. 
+indPlantData <- read_csv("data-clean/experimentalData_individualPlants.csv")
+indPlantData <- indPlantData %>% 
+  mutate(dmax = 
+           (Time_to_germination_C * PCscores["Time_to_germination_C"]) +
+           (Days_to_flower_C * PCscores["Days_to_flower_C"]) +
+           (Num_Inf_C * PCscores["Num_Inf_C"]) +
+           (Reprod_biomass_C * PCscores["Reprod_biomass_C"]) +
+           (Veget_biomass_C * PCscores["Veget_biomass_C"]) +
+           (Avg_bnr_wdth_C * PCscores["Avg_bnr_wdth_C"]) +
+           (Avg_bnr_lgth_C * PCscores["Avg_bnr_lgth_C"]) +
+           (Avg_petiole_lgth_C * PCscores["Avg_petiole_lgth_C"]) +
+           (Avg_peducle_lgth_C * PCscores["Avg_peducle_lgth_C"]) +
+           (Avg_num_flwrs_C * PCscores["Avg_num_flwrs_C"]) +
+           (Avg_leaf_wdth_C * PCscores["Avg_leaf_wdth_C"]) +
+           (Time_to_germination_C * PCscores["Avg_leaf_lgth_C"]) +
+           (Avg_stolon_thick_C * PCscores["Avg_stolon_thick_C"]) +
+           (HCN_Results * PCscores["freqHCN_C"]))
+
+
+famMeans_Dmax <- indPlantData %>% 
+  group_by(Population, Family_ID, Distance_to_core) %>% 
+  summarise(dmax = mean(dmax, na.rm = TRUE))
+
+# Model testing for cline in dmax
+damx_mod <- lm(dmax ~ Distance_to_core, data = famMeans_Dmax)
+summary(damx_mod)
+
+### Cline max ###
+
 # Load in family mean dataset
 famMeans <- read_csv("data-clean/experimentalData_familyMeans.csv")
 
 # Subset data for RDA
 famMeans_forRDA <- famMeans %>%
   # select(-Seeds_per_flower, -Num_Cyano) %>%
-  select(-total_plants, -n_HCN, -Avg_seeds_per_flower) %>%
-  select(Population, Distance_to_core, Family_ID, Time_to_germination_C:Avg_stolon_thick_C, freqHCN) %>% 
+  dplyr::select(-total_plants, -n_HCN, -Avg_seeds_per_flower) %>%
+  dplyr::select(Population, Distance_to_core, Family_ID, Time_to_germination_C:Avg_stolon_thick_C, freqHCN) %>% 
   na.omit()
 
 # Perform RDA with multiple traits as response, distance as sole predictors
