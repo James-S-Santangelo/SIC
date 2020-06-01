@@ -36,8 +36,7 @@ popMeans <- familyMeans %>%
             Avg_num_flwrs_C = mean(Avg_num_flwrs_C, na.rm = TRUE),
             Avg_leaf_wdth_C = mean(Avg_leaf_wdth_C, na.rm = TRUE),
             Avg_leaf_lgth_C = mean(Avg_leaf_lgth_C, na.rm = TRUE),
-            Avg_stolon_thick_C = mean(Avg_stolon_thick_C, na.rm = TRUE)) %>% 
-  ungroup() %>% 
-  mutate(freqHCN_C = freqHCN / mean(freqHCN))
+            Avg_stolon_thick_C = mean(Avg_stolon_thick_C, na.rm = TRUE),
+            freqHCN_C = mean(freqHCN_C, na.rm = TRUE)) 
 
 write_csv(popMeans, "data-clean/experimentalData_popMeans.csv")

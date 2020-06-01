@@ -39,7 +39,9 @@ familyMeans <- experimental_data %>%
             Avg_leaf_lgth_C = mean(Avg_leaf_lgth_C, na.rm = TRUE),
             Avg_stolon_thick_C = mean(Avg_stolon_thick_C, na.rm = TRUE)) %>% 
   separate(Family, sep = "_", into = c("Population", "Family_ID"), remove = FALSE) %>% 
-  dplyr::select(-Family_ID)
+  dplyr::select(-Family_ID) %>% 
+  ungroup() %>% 
+  mutate(freqHCN_C = freqHCN / mean(freqHCN, na.rm = TRUE))
 
 # Write family means to disk
 write_csv(familyMeans, "data-clean/experimentalData_familyMeans.csv")

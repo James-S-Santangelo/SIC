@@ -5,14 +5,24 @@ pollinatorObservations <- read_csv("data-raw/pollinatorObservations.csv")
 
 # Remove rows where wind ruined pollinator observations
 pollinatorObservations <- pollinatorObservations %>%
-  filter(!grepl("Breeze|Wind",Comments))
+  filter(!grepl("Breeze|Wind",Comments)) %>% 
+  mutate(Population = as.character(Population))
 
 # Load in data with lat/longs
-latLongs <- read_csv("data-raw/populationLatLongs.csv")
+latLongs <- read_csv("data-raw/populationLatLongs.csv") %>% 
+  mutate(Population = as.character(Population))
 
 # Add population lat/long data to seed/flower ratio dataframe
 pollinatorObservations <- pollinatorObservations %>%
   left_join(., latLongs, by = "Population")
+
+# Load GMIS (i.e., impervious surface dataset)
+gmis <- read_csv("data-clean/gmis.csv") %>% 
+  mutate(Population = as.character(Population))
+
+# Add impervious survafe values to data 
+pollinatorObservations <- pollinatorObservations %>% 
+  left_join(., gmis, by = "Population")
 
 # Use haversine formulation to add distance to urban core
 source("scripts/haversine.R")

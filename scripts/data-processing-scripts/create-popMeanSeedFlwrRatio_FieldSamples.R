@@ -16,14 +16,24 @@ seedFlwrRatio_cleaned <- flwrSeedFieldData %>%
   filter(is.na(Comments)) %>%
   
   # Define number of seeds per flower
-  mutate(Seeds_per_flower = Num.Seeds / Num.Flwrs)
+  mutate(Seeds_per_flower = Num.Seeds / Num.Flwrs,
+         Population = as.character(Population))
 
 # Load in data with lat/longs
-latLongs <- read_csv("data-raw/populationLatLongs.csv")
+latLongs <- read_csv("data-raw/populationLatLongs.csv") %>% 
+  mutate(Population = as.character(Population))
 
 # Add population lat/long data to seed/flower ratio dataframe
 seedFlwrRatio_cleaned <- seedFlwrRatio_cleaned %>%
   left_join(., latLongs, by = "Population")
+
+# Load GMIS (i.e., impervious surface dataset)
+gmis <- read_csv("data-clean/gmis.csv") %>% 
+  mutate(Population = as.character(Population))
+
+# Add impervious survafe values to data 
+seedFlwrRatio_cleaned <- seedFlwrRatio_cleaned %>% 
+  left_join(., gmis, by = "Population")
 
 # Use haversine formulation to add distance to urban core
 source("scripts/haversine.R")
@@ -44,7 +54,7 @@ write.csv(seedFlwrRatio_cleaned, "data-clean/flwrSeedRatio_fieldPlants.csv")
 seedFlwrRatio_popMeans <- seedFlwrRatio_cleaned %>%
   
   # Group by population
-  group_by(Population, Latitude, Longitude, Distance_to_core) %>%
+  group_by(Population, Latitude, Longitude, gmis, Distance_to_core) %>%
   
   # Calculte mean number of seeds per flower
   summarize(Num_Seeds = mean(Num.Seeds, na.rm = TRUE),
