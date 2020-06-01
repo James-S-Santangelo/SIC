@@ -9,10 +9,9 @@ library(car)
 
 ### Dmax ###
 
+# Load in population-mean dataframe
 popMeans <- read_csv("data-clean/experimentalData_popMeans.csv") %>% 
-  dplyr::select(Time_to_germination_C:Avg_stolon_thick_C, freqHCN) %>% 
-  mutate(freqHCN_C = freqHCN / mean(freqHCN)) %>% 
-  dplyr::select(-freqHCN)
+  dplyr::select(Time_to_germination_C:freqHCN_C) 
 
 # Perform PCA on population trait means and
 # extract PC1 of the rotation (i.e., variance-covariance matirx). 
@@ -43,17 +42,17 @@ indPlantData <- indPlantData %>%
            (Avg_stolon_thick_C * trait_loadings["Avg_stolon_thick_C"]) +
            (HCN_Results * trait_loadings["freqHCN_C"]))
 
-
 famMeans_Dmax <- indPlantData %>% 
-  group_by(Family, Distance_to_core) %>% 
-  summarise(dmax = mean(dmax, na.rm = TRUE))
+  group_by(Family, gmis) %>% 
+  summarise(dmax = mean(dmax, na.rm = TRUE)) %>% 
+  ungroup()
 
 # Model testing for cline in dmax
-damx_mod <- lm(dmax ~ Distance_to_core, data = famMeans_Dmax)
+damx_mod <- lm(dmax ~ gmis, data = famMeans_Dmax)
 summary(damx_mod)
 
 
-dMax_plot <- ggplot(famMeans_Dmax, aes(x = Distance_to_core, y = dmax)) +
+dMax_plot <- ggplot(famMeans_Dmax, aes(x = gmis, y = dmax)) +
   geom_point(size = 3, colour = "black") +
   geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
   ng1
@@ -62,22 +61,20 @@ dMax_plot
 ### Cline max ###
 
 # Load in family mean dataset
-famMeans <- read_csv("data-clean/experimentalData_familyMeans.csv")
+famMeans <- read_csv("data-clean/experimentalData_familyMeans.csv") 
 
 # Subset data for RDA
-famMeans_forRDA <- famMeans %>%
+famMeans_forRDA <- famMeans %>% 
   # select(-Seeds_per_flower, -Num_Cyano) %>%
   dplyr::select(-total_plants, -n_HCN, -Avg_seeds_per_flower) %>%
-  dplyr::select(Population, Distance_to_core, Family, Time_to_germination_C:Avg_stolon_thick_C, freqHCN) %>% 
-  mutate(freqHCN_C = freqHCN / mean(freqHCN, na.rm = TRUE)) %>% 
-  dplyr::select(-freqHCN) %>% 
+  dplyr::select(Population, Distance_to_core, gmis, Family, Time_to_germination_C:freqHCN_C) %>% 
   na.omit()
 
 # Perform RDA with multiple traits as response, distance as sole predictors
 rdaFam <- rda(famMeans_forRDA %>% 
-                     select(Time_to_germination_C:freqHCN_C) ~ 
-                famMeans_forRDA$Distance_to_core, 
-              na.action = "na.omit")
+                     dplyr::select(Time_to_germination_C:freqHCN_C) ~ 
+                famMeans_forRDA$gmis, 
+              na.action = "na.omit", scale = TRUE)
 summary(rdaFam)
 
 # Permutation based test of significance of distance term in RDA
@@ -111,108 +108,110 @@ indPlantData <- indPlantData %>%
            (HCN_Results * species_scores["freqHCN_C"]))
   
 famMeans_clineMax <- indPlantData %>% 
-  group_by(Family, Distance_to_core) %>% 
-  summarise(clinemax = mean(clinemax, na.rm = TRUE))
+  group_by(Family, gmis) %>% 
+  summarise(clinemax = mean(clinemax, na.rm = TRUE)) 
 
 # Model testing for cline in cline_max
-clineMax_mod <- lm(clinemax ~ Distance_to_core, data = famMeans_clineMax)
+clineMax_mod <- lm(clinemax ~ gmis, data = famMeans_clineMax)
 summary(clineMax_mod)
 
 #### UNIVARIATE TRAIT CHANGE WITH URBANIZATION: FAMILY MEANS ####
 
+par(mfrow = c(2,2))
+
 ## SIGNIFICANT ##
 
 # Sig. 
-germMod <- lm(Time_to_germination ~ Distance_to_core, data = famMeans)
+germMod <- lm(log(Time_to_germination) ~ gmis, data = famMeans)
 summary(germMod)
 plot(germMod)
-hist(residuals(germMod)) # No transformation
+hist(residuals(germMod)) # Log transformation
 
 # Sig.
-ffMod <- lm(Days_to_flower ~ Distance_to_core, data = famMeans)
+ffMod <- lm(Days_to_flower ~ gmis, data = famMeans)
 summary(ffMod)
 plot(ffMod)
 hist(residuals(ffMod)) # No transformation needed
 
 # Sig.
-vegMod <- lm(Veget_biomass ~ Distance_to_core, data = famMeans)
+vegMod <- lm(Veget_biomass ~ gmis, data = famMeans)
 summary(vegMod)
 plot(vegMod)
 hist(residuals(vegMod)) # No transformation needed
 
-# Sig.
-blMod <- lm(Avg_bnr_lgth ~ Distance_to_core, data = famMeans)
-summary(blMod)
-plot(blMod)
-hist(residuals(blMod)) # No transformation needed
-
 # Sig
-stMod <- lm(Avg_stolon_thick ~ Distance_to_core, data = famMeans)
-summary(stMod)
-plot(stMod)
-hist(residuals(stMod)) # No transformation needed
-
-# Marg
-HCNMod <- lm(freqHCN ~ Distance_to_core, data = famMeans)
+HCNMod <- lm(freqHCN ~ gmis, data = famMeans)
 summary(HCNMod)
 plot(HCNMod)
 hist(residuals(HCNMod)) # No transformation
 
-## NOT SIGNIFICANT ##
-
-# NS
-infMod <- lm(sqrt(Num_Inf) ~ Distance_to_core, data = famMeans)
+# Sig
+infMod <- lm(sqrt(Num_Inf) ~ gmis, data = famMeans)
 summary(infMod)
 plot(infMod)
 hist(residuals(infMod)) # Square root transformation
 
-# NS
-repMod <- lm(Reprod_biomass ~ Distance_to_core, data = famMeans)
+# Sig
+repMod <- lm(Reprod_biomass ~ gmis, data = famMeans)
 summary(repMod)
 plot(repMod)
 hist(residuals(repMod)) # No transformation needed
 
-# Marg
-bwMod <- lm(Avg_bnr_wdth ~ Distance_to_core, data = famMeans)
+# Sig
+pedMod <- lm(Avg_peducle_lgth ~ gmis, data = famMeans)
+summary(pedMod)
+plot(pedMod)
+hist(residuals(pedMod)) # No transformation needed
+
+# Sig
+leafWdthMod <- lm(Avg_leaf_wdth ~ gmis, data = famMeans)
+summary(leafWdthMod)
+plot(leafWdthMod)
+hist(residuals(leafWdthMod)) # No transformation needed
+
+# Sig
+sexInvestMod <- lm(sex_asex ~ gmis, data = famMeans)
+summary(sexInvestMod)
+plot(sexInvestMod)
+hist(residuals(sexInvestMod)) # No transformation needed
+
+## NOT SIGNIFICANT ##
+
+# NS
+blMod <- lm(Avg_bnr_lgth ~ gmis, data = famMeans)
+summary(blMod)
+plot(blMod)
+hist(residuals(blMod)) # No transformation needed
+
+# NS
+stMod <- lm(Avg_stolon_thick ~ gmis, data = famMeans)
+summary(stMod)
+plot(stMod)
+hist(residuals(stMod)) # No transformation needed
+
+# NS
+bwMod <- lm(Avg_bnr_wdth ~ gmis, data = famMeans)
 summary(bwMod)
 plot(bwMod)
 hist(residuals(bwMod)) #  No transformation needed
 
 # NS
-pedMod <- lm(Avg_peducle_lgth ~ Distance_to_core, data = famMeans)
-summary(pedMod)
-plot(pedMod)
-hist(residuals(pedMod)) # No transformation needed
-
-# NS
-numFlwrsMod <- lm(Avg_num_flwrs ~ Distance_to_core, data = famMeans)
+numFlwrsMod <- lm(Avg_num_flwrs ~ gmis, data = famMeans)
 summary(numFlwrsMod)
 plot(numFlwrsMod)
 hist(residuals(numFlwrsMod)) # No transformation needed
 
 # NS
-leafWdthMod <- lm(Avg_leaf_wdth ~ Distance_to_core, data = famMeans)
-summary(leafWdthMod)
-plot(leafWdthMod)
-hist(residuals(leafWdthMod)) # No transformation needed
-
-# NS
-leafLgthMod <- lm(Avg_leaf_lgth ~ Distance_to_core, data = famMeans)
+leafLgthMod <- lm(Avg_leaf_lgth ~ gmis, data = famMeans)
 summary(leafLgthMod)
 plot(leafLgthMod)
 hist(residuals(leafLgthMod)) # No transformation needed
 
 # NS
-petMod <- lm(Avg_petiole_lgth ~ Distance_to_core, data = famMeans)
+petMod <- lm(Avg_petiole_lgth ~ gmis, data = famMeans)
 summary(petMod)
 plot(petMod)
 hist(residuals(petMod)) # No transformation needed
-
-# Marg
-sexInvestMod <- lm(sex_asex ~ Distance_to_core, data = famMeans)
-summary(sexInvestMod)
-plot(sexInvestMod)
-hist(residuals(sexInvestMod)) # No transformation needed
 
 #### POLLINATOR OBSERVATIONS ####
 
@@ -222,14 +221,14 @@ polldata <- read.csv('data-clean/pollinatorObservations.csv')
 # analysis of pollinator observations
 # impute zeros for unobserved polls
 complete_polldata <- polldata %>% 
-  group_by(Population,Morph, Distance_to_core) %>% 
+  group_by(Population,Morph, gmis, Distance_to_core) %>% 
   complete(Population, Morph, fill = list(Num_Visit = 0)) %>%
   filter(Morph != "Syrphid")
 
 # Summarize data by pollinator functional group
 # Used for visit/infl analysis
 visitshare_polldata <- complete_polldata %>% 
-  group_by(Population, Distance_to_core, Morph) %>% 
+  group_by(Population, gmis, Distance_to_core, Morph) %>% 
   # calculate number of individuals observed per site per morph; number of inflorescence, number of visit per infl.
   summarise(Num.Ind = n(),
             Num_Visit = sum(Num_Visit),
@@ -244,11 +243,8 @@ visitshare_polldata %>%
   summarise(mean = mean(Visits_per_Inf),
             sd = sd(Visits_per_Inf))
 
-# Square root transform visits per inflorescence to improve normality of model residuals
-visitshare_polldata$sqRootVisInf <- sqrt(visitshare_polldata$Visits_per_Inf)
-
 # Multiple regression analysis on log(visit/inf) with distance, morph, and their interaction. 
-pollVisit <- lm(sqRootVisInf ~ Distance_to_core + Morph + Distance_to_core:Morph,
+pollVisit <- lm(sqrt(Visits_per_Inf) ~ gmis + Morph + gmis:Morph,
          data = visitshare_polldata)
 summary(pollVisit)
 Anova(pollVisit, type = "III") #Type 3 for interpreting interaction
@@ -263,14 +259,17 @@ plot(pollVisit)
 # Load in seeds per flower from field-collected inflorescences
 popMeans <- read_csv("data-clean/experimentalData_popMeans.csv")
 seedFlwrFieldData <- read_csv("data-clean/flwrSeedRatio_fieldPlants.csv") %>%
-  select(-X1, -Comments) %>%
-  group_by(Population, Distance_to_core) %>%
-  summarize(Seeds_per_flower = mean(Seeds_per_flower)) 
+  dplyr::select(-X1, -Comments) %>%
+  group_by(Population, gmis, Distance_to_core) %>%
+  summarize(count = n(),
+            Seeds_per_inf = sum(Num.Seeds) / count,
+            Seeds_per_flower = mean(Seeds_per_flower)) 
 
 # Retrieve seeds per flower from common garden plants
 seedFlwrComGarData <- popMeans %>%
-  select(Population, Distance_to_core, Avg_seeds_per_flower) %>% 
-  rename("Seeds_per_flower" = "Avg_seeds_per_flower")
+  dplyr::select(Population, gmis, Distance_to_core, Avg_seeds_per_flower, Avg_seeds_per_inf) %>% 
+  rename("Seeds_per_flower" = "Avg_seeds_per_flower",
+         "Seeds_per_inf" = "Avg_seeds_per_inf")
 
 # Combine both dataframes to run single linear model
 seedsPerFlwr <- bind_rows(seedFlwrFieldData, seedFlwrComGarData,
@@ -278,7 +277,7 @@ seedsPerFlwr <- bind_rows(seedFlwrFieldData, seedFlwrComGarData,
   mutate(source = fct_recode(source, "field" = "1", "common garden" = "2"))
 
 # Model testing for differences in seeds per flower among field and CG plants
-seedPerFlwrField <- lm(Seeds_per_flower ~ Distance_to_core*source, 
+seedPerFlwrField <- lm(log(Seeds_per_inf) ~ gmis*source, 
                          data = seedsPerFlwr)
 summary(seedPerFlwrField)
 Anova(seedPerFlwrField, type = "III")
@@ -293,7 +292,7 @@ seedsPerFlwr %>%
 # Get betas for individual sources
 seedMods <- seedsPerFlwr %>%
   group_by(source) %>%
-  do(mod = lm(Seeds_per_flower ~ Distance_to_core, data = .)) %>%
+  do(mod = lm(Seeds_per_flower ~ gmis, data = .)) %>%
   broom::tidy(mod, seedMods)
 
 #### CORRELATION OF DISTANCE, IMPERV, AND POP DENS ####
@@ -340,7 +339,7 @@ ng1=theme(aspect.ratio=0.7,panel.background = element_blank(),
 df_sites  <- data.frame(scores(rdaFam, display = "sites", scaling = "sites")[,1:2]) %>%
   # rownames_to_column(var = "Population") %>%
   # mutate(Population = seq(1:27)) %>%
-  cbind(., famMeans_forRDA %>% select(Population, Distance_to_core))
+  cbind(., famMeans_forRDA %>% dplyr::select(Population, gmis))
 
 # Extract RDA1 and PC1 species scores
 df2_species  <- data.frame(scores(rdaFam, display = "species", scaling = "species")[,1:2])     # loadings for PC1 and PC2
@@ -348,7 +347,7 @@ row.names(df_sites) <- seq(1:27)
 
 # Plot site scores along first 2 axes. Colour points by distance
 rda_plot <- ggplot(df_sites, aes(x = RDA1, y = PC1)) + 
-  geom_point(size = 3, shape = 21, colour = "black", aes(fill = Distance_to_core)) +
+  geom_point(size = 3, shape = 21, colour = "black", aes(fill = gmis)) +
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_vline(xintercept = 0, linetype = "dotted") +
   scale_fill_gradient(low = "white", high = "black",
@@ -363,6 +362,8 @@ rda_plot <- ggplot(df_sites, aes(x = RDA1, y = PC1)) +
               legend.title = element_blank(),
               legend.key.size = unit(0.5, "cm"),
               legend.spacing.x = unit(0.1, "cm")) 
+rda_plot
+
 
 # Add arrows to RDA plot. 
 rda_triplot <- rda_plot +
@@ -380,7 +381,7 @@ ggsave("analysis/figures/main-text/figure2A_RDA-triplot.pdf",
 
 # figure 2B #
 
-clineMax_plot <- ggplot(famMeans_clineMax, aes(x = Distance_to_core, y = clinemax)) +
+clineMax_plot <- ggplot(famMeans_clineMax, aes(x = gmis, y = clinemax)) +
   geom_point(size = 3, colour = "black") +
   geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
   ng1

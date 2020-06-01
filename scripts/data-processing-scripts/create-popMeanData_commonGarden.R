@@ -21,6 +21,7 @@ popMeans <- familyMeans %>%
             Avg_leaf_lgth = mean(Avg_leaf_lgth, na.rm = TRUE),
             Avg_stolon_thick = mean(Avg_stolon_thick, na.rm = TRUE),
             Avg_seeds_per_flower = mean(Avg_seeds_per_flower, na.rm = TRUE),
+            Avg_seeds_per_inf = mean(Avg_seeds_per_inf, na.rm = TRUE),
             Avg_num_flwrs = mean(Avg_num_flwrs, na.rm = TRUE),
             freqHCN = mean(freqHCN, na.rm = TRUE),
             sex_asex = Reprod_biomass / Veget_biomass,
