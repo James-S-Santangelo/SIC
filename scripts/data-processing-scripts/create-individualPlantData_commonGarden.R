@@ -6,7 +6,15 @@ experimentalData <- read.csv("data-raw/experimentalData_commonGarden.csv", na = 
 # Load in data with number of flowers and seeds for infividual plants
 flwrSeedData <- read_csv("data-raw/flwrSeedRatio_commonGardenPlants.csv", na = c("", "NA", "#NUM!")) %>%
   dplyr::select(label, Row, Column, Num_flwr_R1, Num_Seeds_R1, Num_flwr_R2, Num_Seeds_R2) %>%
-  filter_all(any_vars(!is.na(.)))
+  filter_all(any_vars(!is.na(.))) %>% 
+  mutate(num_inf = case_when(is.na(Num_flwr_R1) & is.na(Num_flwr_R2) ~ 0,
+                             is.na(Num_flwr_R1) | is.na(Num_flwr_R2) ~ 1,
+                             TRUE ~ 2)) %>% 
+  rowwise() %>% 
+  mutate(num_seeds = sum(Num_Seeds_R1, Num_Seeds_R2, na.rm = TRUE),
+         num_seeds = ifelse(num_seeds == 0, NA, num_seeds),
+         Avg_seeds_per_inf = num_seeds / num_inf)
+  
 
 # Load in data with masses for bags and envelopes that held reproductive and vegetative biomass
 bagEnv_Masses <- read_csv("data-raw/bagMasses.csv")
@@ -63,7 +71,7 @@ experimentalData_modified <- experimentalData %>%
                 Days_to_flower, Num_Inf, HCN_Results, Reprod_biomass, Veget_biomass,
                 Avg_bnr_wdth, Avg_bnr_lgth, Avg_petiole_lgth, Avg_peducle_lgth, 
                 Avg_num_flwrs, Avg_leaf_wdth, Avg_leaf_lgth, Avg_stolon_thick,
-                Avg_seeds_per_flower) %>%
+                Avg_seeds_per_flower, Avg_seeds_per_inf) %>%
   
   # Reprod_biomass and num_flwrs should be 0 if plant never flowered, not NA
   mutate(Reprod_biomass = ifelse(Num_Inf == 0, 0, Reprod_biomass),
