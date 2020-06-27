@@ -5,6 +5,28 @@ library(tidyverse)
 library(vegan)
 library(car)
 
+
+#### GERMINATION ####
+
+germination <- read_csv("data-clean/germination.csv") %>% 
+  filter_all(any_vars(!is.na(.)))
+
+prop_germinated <- germination %>% 
+  group_by(Population) %>% 
+  summarise(num_germ = sum(Is.germinated),
+            total = n(),
+            prop_germ = num_germ / total,
+            prop_failed = 1 - prop_germ) %>% 
+  left_join(., popMeans %>% select(Population, Distance_to_core))
+
+germination_mod <- lm(sqrt(prop_failed) ~ Distance_to_core, data = prop_germinated)
+summary(germination_mod)
+plot(germination_mod)
+hist(residuals(germination_mod))
+
+plot(prop_failed ~ Distance_to_core, data = prop_germinated)
+
+
 #### MULTIVARIATE TRAIT CHANGE WITH URBANIZATION: FAMILY MEANS ####
 
 ### Dmax ###
@@ -43,7 +65,7 @@ indPlantData <- indPlantData %>%
            (HCN_Results * trait_loadings["freqHCN_C"]))
 
 famMeans_Dmax <- indPlantData %>% 
-  group_by(Family, gmis) %>% 
+  group_by(Family, Distance_to_core, gmis) %>% 
   summarise(dmax = mean(dmax, na.rm = TRUE)) %>% 
   ungroup()
 

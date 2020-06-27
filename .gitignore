@@ -2,12 +2,12 @@
 .Rhistory
 .RData
 .Ruserdata
-stock_data.txt
+stock*
 analysis/figures/archive/
 gis/
 .DS_Store
-*.svg 
-*.pdf 
+*.svg
+*.pdf
 scripts/KT_analysis_scripts/
 analysis/kt_figures/
 renv/library/
