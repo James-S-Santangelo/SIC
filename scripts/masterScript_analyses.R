@@ -24,9 +24,6 @@ summary(germination_mod)
 plot(germination_mod)
 hist(residuals(germination_mod))
 
-plot(prop_failed ~ Distance_to_core, data = prop_germinated)
-
-
 #### MULTIVARIATE TRAIT CHANGE WITH URBANIZATION: FAMILY MEANS ####
 
 ### Dmax ###
@@ -70,15 +67,8 @@ famMeans_Dmax <- indPlantData %>%
   ungroup()
 
 # Model testing for cline in dmax
-damx_mod <- lm(dmax ~ gmis, data = famMeans_Dmax)
+damx_mod <- lm(dmax ~ Distance_to_core, data = famMeans_Dmax)
 summary(damx_mod)
-
-
-dMax_plot <- ggplot(famMeans_Dmax, aes(x = gmis, y = dmax)) +
-  geom_point(size = 3, colour = "black") +
-  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
-  ng1
-dMax_plot
 
 ### Cline max ###
 
@@ -95,7 +85,7 @@ famMeans_forRDA <- famMeans %>%
 # Perform RDA with multiple traits as response, distance as sole predictors
 rdaFam <- rda(famMeans_forRDA %>% 
                      dplyr::select(Time_to_germination_C:freqHCN_C) ~ 
-                famMeans_forRDA$gmis, 
+                famMeans_forRDA$Distance_to_core, 
               na.action = "na.omit", scale = TRUE)
 summary(rdaFam)
 
@@ -493,6 +483,44 @@ ggsave("analysis/figures/main-text/figure3B_seeds_per_flower.pdf",
 
 #### FIGURES: SUPPLEMENTARY MATERIALS ####
 
+## FIGURE S1 ##
+
+# Figure S1A: Imperv. vs. distance
+imperv_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = Imperv)) +
+  geom_point(size = 2.5) +
+  geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
+  ylab('Impervious surface (%)') + xlab('Source population distance from urban core (km)') +
+  ng1
+imperv_vs_distance
+
+ggsave("analysis/figures/sup-mat/figureS1a_Imperv_vs.distance.pdf", 
+       plot = imperv_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
+
+# Figure S2B: Pop Dens vs. distance
+popDens_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = popDens)) +
+  geom_point(size = 2.5) +
+  geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
+  ylab(expression(~Human~population~density~(per~km^2))) + xlab('Source population distance from urban core (km)') +
+  ng1
+popDens_vs_distance
+
+ggsave("analysis/figures/sup-mat/figureS1b_popDens_vs.distance.pdf", 
+       plot = popDens_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
+
+
+## FIGURE S2
+
+dMax_plot <- ggplot(famMeans_clineMax, aes(x = gmis, y = clinemax)) +
+  geom_point(size = 3, colour = "black") +
+  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
+  ng1
+dMax_plot
+
+ggsave("analysis/figures/main-text/figureS2_dMax_by_distance.pdf", 
+       plot = clineMax_plot, width = 8, height = 6, unit = "in", dpi = 600)
+
+
+
 ## FIGURE S1
 
 # Load in population mean dataset
@@ -603,29 +631,7 @@ clineMax_plotPop
 ggsave("analysis/figures/sup-mat/figureS1B_clineMaxPop_by_distance.pdf", 
        plot = clineMax_plotPop, width = 8, height = 6, unit = "in", dpi = 600)
 
-## FIGURE S2
 
-# Figure S2A: Imperv. vs. distance
-imperv_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = Imperv)) +
-  geom_point(size = 2.5) +
-  geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
-  ylab('Impervious surface (%)') + xlab('Source population distance from urban core (km)') +
-  ng1
-imperv_vs_distance
-
-ggsave("analysis/figures/sup-mat/figureS2a_Imperv_vs.distance.pdf", 
-       plot = imperv_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
-
-# Figure S2B: Pop Dens vs. distance
-popDens_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = popDens)) +
-  geom_point(size = 2.5) +
-  geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
-  ylab(expression(~Human~population~density~(per~km^2))) + xlab('Source population distance from urban core (km)') +
-  ng1
-popDens_vs_distance
-
-ggsave("analysis/figures/sup-mat/figureS2b_popDens_vs.distance.pdf", 
-       plot = popDens_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
 
 
 ## FIGURE S3
@@ -792,6 +798,21 @@ ggsave("analysis/figures/sup-mat/figureS6_visitsPerInf_by_Distance_linear.pdf",
 
 #### TABLES: SUPPLEMENTARY MATERIALS ####
 
+## TABLE S1 ##
+
+tableS1 <- cov(as.matrix(popMeans)) 
+tableS1[upper.tri(tableS1)] <- NA
+tableS1 <- tableS1 %>% 
+  cbind(., trait_loadings) %>% 
+  cbind(., species_scores) %>% 
+  as.data.frame() %>% 
+  rownames_to_column(., var = 'Trait') %>%
+  mutate_if(is.numeric, round, 3)
+
+write_csv(tableS1, "analysis/tables/tableS1_var_covar.csv", col_names = TRUE)
+
+## TABLE S2 ##
+
 #' Creates vector with trait mean and output from standardized and 
 #'     unstandardized regressions
 #'
@@ -853,10 +874,10 @@ leafLVector <- summarise_trait_regressions(famMeans, "Avg_leaf_lgth")
 petVector <- summarise_trait_regressions(famMeans, "Avg_petiole_lgth")
 
 header <- c("Trait", "Mean", "Unstandarized beta", "Standardized beta", "P-value", "R squared")
-tableS1 <- rbind(germTimeVector, FFVector, vegBioVector, bnrLVector, stolVector, HCNVector,
+tableS2 <- rbind(germTimeVector, FFVector, vegBioVector, bnrLVector, stolVector, HCNVector,
                  numInfVector, repBioVector, bnrWVector, pedVector, numFlwrVector, leafWVector,
                  leafLVector, petVector) %>% 
   as.data.frame() %>% 
   setNames(., header)
 
-write_csv(tableS1, "analysis/tables/tableS1_traitRegSummary.csv", col_names = TRUE)
+write_csv(tableS2, "analysis/tables/tableS2_traitRegSummary.csv", col_names = TRUE)
