@@ -510,14 +510,15 @@ ggsave("analysis/figures/sup-mat/figureS1b_popDens_vs.distance.pdf",
 
 ## FIGURE S2
 
-dMax_plot <- ggplot(famMeans_clineMax, aes(x = gmis, y = clinemax)) +
+dMax_plot <- ggplot(famMeans_Dmax, aes(x = Distance_to_core, y = dmax)) +
   geom_point(size = 3, colour = "black") +
   geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
+  ylab(expression(~d[max])) + xlab('Source population distance from urban center (km)') +
   ng1
 dMax_plot
 
-ggsave("analysis/figures/main-text/figureS2_dMax_by_distance.pdf", 
-       plot = clineMax_plot, width = 8, height = 6, unit = "in", dpi = 600)
+ggsave("analysis/figures/sup-mat/PDFs/figureS2_dMax_by_distance.pdf", 
+       plot = dMax_plot, width = 8, height = 6, unit = "in", dpi = 600)
 
 
 
