@@ -4,13 +4,14 @@ library(lmerTest)
 library(tidyverse)
 library(vegan)
 library(car)
-
+library(Hmisc)
 
 #### GERMINATION ####
 
 germination <- read_csv("data-clean/germination.csv") %>% 
   filter_all(any_vars(!is.na(.)))
 
+# Calculate proportion germiated
 prop_germinated <- germination %>% 
   group_by(Population) %>% 
   summarise(num_germ = sum(Is.germinated),
@@ -19,6 +20,7 @@ prop_germinated <- germination %>%
             prop_failed = 1 - prop_germ) %>% 
   left_join(., popMeans %>% select(Population, Distance_to_core))
 
+# Check if proportion that didn't germinate is biased across transect
 germination_mod <- lm(sqrt(prop_failed) ~ Distance_to_core, data = prop_germinated)
 summary(germination_mod)
 plot(germination_mod)
@@ -120,110 +122,82 @@ indPlantData <- indPlantData %>%
            (HCN_Results * species_scores["freqHCN_C"]))
   
 famMeans_clineMax <- indPlantData %>% 
-  group_by(Family, gmis) %>% 
+  group_by(Family, Distance_to_core) %>% 
   summarise(clinemax = mean(clinemax, na.rm = TRUE)) 
 
 # Model testing for cline in cline_max
-clineMax_mod <- lm(clinemax ~ gmis, data = famMeans_clineMax)
+clineMax_mod <- lm(clinemax ~ Distance_to_core, data = famMeans_clineMax)
 summary(clineMax_mod)
 
 #### UNIVARIATE TRAIT CHANGE WITH URBANIZATION: FAMILY MEANS ####
 
-par(mfrow = c(2,2))
-
 ## SIGNIFICANT ##
 
-# Sig. 
-germMod <- lm(log(Time_to_germination) ~ gmis, data = famMeans)
+# Germination
+germMod <- lm(Time_to_germination ~ Distance_to_core, data = famMeans)
 summary(germMod)
-plot(germMod)
-hist(residuals(germMod)) # Log transformation
 
-# Sig.
-ffMod <- lm(Days_to_flower ~ gmis, data = famMeans)
+# Days to first flower
+ffMod <- lm(Days_to_flower ~ Distance_to_core, data = famMeans)
 summary(ffMod)
-plot(ffMod)
-hist(residuals(ffMod)) # No transformation needed
 
-# Sig.
-vegMod <- lm(Veget_biomass ~ gmis, data = famMeans)
+# Vegetative biomass
+vegMod <- lm(Veget_biomass ~ Distance_to_core, data = famMeans)
 summary(vegMod)
-plot(vegMod)
-hist(residuals(vegMod)) # No transformation needed
 
-# Sig
-HCNMod <- lm(freqHCN ~ gmis, data = famMeans)
+# Banner length
+blMod <- lm(Avg_bnr_lgth ~ Distance_to_core, data = famMeans)
+summary(blMod)
+
+# Stolon thickness
+stMod <- lm(Avg_stolon_thick ~ Distance_to_core, data = famMeans)
+summary(stMod)
+
+# HCN
+HCNMod <- lm(freqHCN ~ Distance_to_core, data = famMeans)
 summary(HCNMod)
-plot(HCNMod)
-hist(residuals(HCNMod)) # No transformation
-
-# Sig
-infMod <- lm(sqrt(Num_Inf) ~ gmis, data = famMeans)
-summary(infMod)
-plot(infMod)
-hist(residuals(infMod)) # Square root transformation
-
-# Sig
-repMod <- lm(Reprod_biomass ~ gmis, data = famMeans)
-summary(repMod)
-plot(repMod)
-hist(residuals(repMod)) # No transformation needed
-
-# Sig
-pedMod <- lm(Avg_peducle_lgth ~ gmis, data = famMeans)
-summary(pedMod)
-plot(pedMod)
-hist(residuals(pedMod)) # No transformation needed
-
-# Sig
-leafWdthMod <- lm(Avg_leaf_wdth ~ gmis, data = famMeans)
-summary(leafWdthMod)
-plot(leafWdthMod)
-hist(residuals(leafWdthMod)) # No transformation needed
-
-# Sig
-sexInvestMod <- lm(sex_asex ~ gmis, data = famMeans)
-summary(sexInvestMod)
-plot(sexInvestMod)
-hist(residuals(sexInvestMod)) # No transformation needed
 
 ## NOT SIGNIFICANT ##
 
-# NS
-blMod <- lm(Avg_bnr_lgth ~ gmis, data = famMeans)
-summary(blMod)
-plot(blMod)
-hist(residuals(blMod)) # No transformation needed
+# Number of inflorescences
+infMod <- lm(Num_Inf ~ Distance_to_core, data = famMeans)
+summary(infMod)
 
-# NS
-stMod <- lm(Avg_stolon_thick ~ gmis, data = famMeans)
-summary(stMod)
-plot(stMod)
-hist(residuals(stMod)) # No transformation needed
+# Reproductive biomass
+repMod <- lm(Reprod_biomass ~ Distance_to_core, data = famMeans)
+summary(repMod)
 
-# NS
-bwMod <- lm(Avg_bnr_wdth ~ gmis, data = famMeans)
+# Banner length
+bwMod <- lm(Avg_bnr_wdth ~ Distance_to_core, data = famMeans)
 summary(bwMod)
-plot(bwMod)
-hist(residuals(bwMod)) #  No transformation needed
 
-# NS
-numFlwrsMod <- lm(Avg_num_flwrs ~ gmis, data = famMeans)
+# Sig
+pedMod <- lm(Avg_peducle_lgth ~ Distance_to_core, data = famMeans)
+summary(pedMod)
+
+# Sig
+leafWdthMod <- lm(Avg_leaf_wdth ~ Distance_to_core, data = famMeans)
+summary(leafWdthMod)
+
+# Number of flowers
+numFlwrsMod <- lm(Avg_num_flwrs ~ Distance_to_core, data = famMeans)
 summary(numFlwrsMod)
-plot(numFlwrsMod)
-hist(residuals(numFlwrsMod)) # No transformation needed
 
-# NS
-leafLgthMod <- lm(Avg_leaf_lgth ~ gmis, data = famMeans)
+# Leaf width
+leafWdthhMod <- lm(Avg_leaf_wdth ~ Distance_to_core, data = famMeans)
+summary(leafWdthhMod)
+
+# Leaf length
+leafLgthMod <- lm(Avg_leaf_lgth ~ Distance_to_core, data = famMeans)
 summary(leafLgthMod)
-plot(leafLgthMod)
-hist(residuals(leafLgthMod)) # No transformation needed
 
-# NS
-petMod <- lm(Avg_petiole_lgth ~ gmis, data = famMeans)
+# Petiole length
+petMod <- lm(Avg_petiole_lgth ~ Distance_to_core, data = famMeans)
 summary(petMod)
-plot(petMod)
-hist(residuals(petMod)) # No transformation needed
+
+# Sex/Asex ratio. Not in RDA.
+sexInvestMod <- lm(sex_asex ~ Distance_to_core, data = famMeans)
+summary(sexInvestMod)
 
 #### POLLINATOR OBSERVATIONS ####
 
@@ -255,57 +229,67 @@ visitshare_polldata %>%
   summarise(mean = mean(Visits_per_Inf),
             sd = sd(Visits_per_Inf))
 
-# Multiple regression analysis on log(visit/inf) with distance, morph, and their interaction. 
-pollVisit <- lm(sqrt(Visits_per_Inf) ~ gmis + Morph + gmis:Morph,
+# Multiple regression analysis on sqrt(visit/inf) with distance, morph, and their interaction. 
+pollVisit <- lm(sqrt(Visits_per_Inf) ~ Distance_to_core + Morph + Distance_to_core:Morph,
          data = visitshare_polldata)
 summary(pollVisit)
 Anova(pollVisit, type = "III") #Type 3 for interpreting interaction
 
-# Diagnostic plots
-hist(residuals(pollVisit))
-par(mfrow = c(2,2))
-plot(pollVisit)
-
-#### SEEDS PER FLOWER ####
+#### POLLINATION SUCCESS ####
 
 # Load in seeds per flower from field-collected inflorescences
-popMeans <- read_csv("data-clean/experimentalData_popMeans.csv")
 seedFlwrFieldData <- read_csv("data-clean/flwrSeedRatio_fieldPlants.csv") %>%
   dplyr::select(-X1, -Comments) %>%
   group_by(Population, gmis, Distance_to_core) %>%
   summarize(count = n(),
             Seeds_per_inf = sum(Num.Seeds) / count,
-            Seeds_per_flower = mean(Seeds_per_flower)) 
+            Seeds_per_flower = mean(Seeds_per_flower),
+            Num_flwrs = mean(Num.Flwrs)) 
 
 # Retrieve seeds per flower from common garden plants
+popMeans <- read_csv("data-clean/experimentalData_popMeans.csv")
 seedFlwrComGarData <- popMeans %>%
-  dplyr::select(Population, gmis, Distance_to_core, Avg_seeds_per_flower, Avg_seeds_per_inf) %>% 
+  dplyr::select(Population, gmis, Distance_to_core, Avg_num_flwrs, Avg_seeds_per_flower, Avg_seeds_per_inf) %>% 
   rename("Seeds_per_flower" = "Avg_seeds_per_flower",
-         "Seeds_per_inf" = "Avg_seeds_per_inf")
+         "Seeds_per_inf" = "Avg_seeds_per_inf",
+         "Num_flwrs" = "Avg_num_flwrs")
 
 # Combine both dataframes to run single linear model
 seedsPerFlwr <- bind_rows(seedFlwrFieldData, seedFlwrComGarData,
                           .id = "source") %>%
   mutate(source = fct_recode(source, "field" = "1", "common garden" = "2"))
 
-# Model testing for differences in seeds per flower among field and CG plants
-seedPerFlwrField <- lm(log(Seeds_per_inf) ~ gmis*source, 
+# Model testing for differences in seeds per FLOWER among field and CG plants
+seedPerFlwr_mod <- lm(Seeds_per_flower ~ Distance_to_core*source, 
                          data = seedsPerFlwr)
-summary(seedPerFlwrField)
-Anova(seedPerFlwrField, type = "III")
-plot(seedPerFlwrField) # Loogs good
-hist(residuals(seedPerFlwrField)) # Loogs good
+summary(seedPerFlwr_mod)
+Anova(seedPerFlwr_mod, type = "III")
+
+# Model testing for differences in seeds per INFLORESCENCE among field and CG plants
+seedPerInf_mod <- lm(log(Seeds_per_inf) ~ Num_flwrs + Distance_to_core*source, 
+                      data = seedsPerFlwr)
+summary(seedPerInf_mod)
+Anova(seedPerInf_mod, type = "III")
 
 # Means
 seedsPerFlwr %>%
   group_by(source) %>%
   summarize(mean = mean(Seeds_per_flower))
 
-# Get betas for individual sources
-seedMods <- seedsPerFlwr %>%
+seedsPerFlwr %>%
   group_by(source) %>%
-  do(mod = lm(Seeds_per_flower ~ gmis, data = .)) %>%
-  broom::tidy(mod, seedMods)
+  summarize(mean = mean(Seeds_per_inf))
+
+# Get betas for individual sources
+seedFlwrMods <- seedsPerFlwr %>%
+  group_by(source) %>%
+  do(mod = lm(Seeds_per_flower ~ Distance_to_core, data = .)) %>%
+  broom::tidy(mod, seedFlwrMods)
+
+seedInfMods <- seedsPerFlwr %>%
+  group_by(source) %>%
+  do(mod = lm(Seeds_per_inf ~ Distance_to_core, data = .)) %>%
+  broom::tidy(mod, seedFlwrMods)
 
 #### CORRELATION OF DISTANCE, IMPERV, AND POP DENS ####
 
@@ -317,6 +301,25 @@ cor(enviroData$Distance_to_core, enviroData$popDens, use = "complete.obs")
 
 summary(lm(Imperv ~ Distance_to_core, data = enviroData))
 summary(lm(popDens ~ Distance_to_core, data = enviroData))
+
+#### PAIRWISE TRAIT CORRELATIONS ####
+
+popMeans <- read_csv("data-clean/experimentalData_popMeans.csv")
+res2<-rcorr(as.matrix(popMeans %>% dplyr::select(Time_to_germination:freqHCN, -Avg_seeds_per_flower, -Avg_seeds_per_inf)), type = 'pearson')
+
+flattenCorrMatrix <- function(cormat, pmat) {
+  ut <- upper.tri(cormat)
+  data.frame(
+    row = rownames(cormat)[row(cormat)[ut]],
+    column = rownames(cormat)[col(cormat)[ut]],
+    cor  =(cormat)[ut],
+    p = pmat[ut]
+  )
+}
+
+corMat_flat <- flattenCorrMatrix(res2$r, res2$P) %>% 
+  mutate(p = round(p, 3))
+mean(corMat_flat$cor)
 
 #### FIGURES: MAIN TEXT ####
 
@@ -343,68 +346,26 @@ ng1=theme(aspect.ratio=0.7,panel.background = element_blank(),
 
 ## MULTIVARIATE TRAIT CHANGE ##
 
-## FIGURE 2 ##
+## FIGURE 1 ##
 
-# figure 2A #
+# figure 1A #
 
-# Extract RDA1 and PC1 site scores
-df_sites  <- data.frame(scores(rdaFam, display = "sites", scaling = "sites")[,1:2]) %>%
-  # rownames_to_column(var = "Population") %>%
-  # mutate(Population = seq(1:27)) %>%
-  cbind(., famMeans_forRDA %>% dplyr::select(Population, gmis))
+#Figure is a map generated in QGIS
 
-# Extract RDA1 and PC1 species scores
-df2_species  <- data.frame(scores(rdaFam, display = "species", scaling = "species")[,1:2])     # loadings for PC1 and PC2
-row.names(df_sites) <- seq(1:27)
+# figure 1B #
 
-# Plot site scores along first 2 axes. Colour points by distance
-rda_plot <- ggplot(df_sites, aes(x = RDA1, y = PC1)) + 
-  geom_point(size = 3, shape = 21, colour = "black", aes(fill = gmis)) +
-  geom_hline(yintercept = 0, linetype = "dotted") +
-  geom_vline(xintercept = 0, linetype = "dotted") +
-  scale_fill_gradient(low = "white", high = "black",
-                      limits = c(0, 50), breaks = seq(0, 50, 10)) +
-  guides(fill = guide_colorbar(ticks = FALSE,
-                               barwidth = 1.5, 
-                               barheight = 15)) +
-  ng1 + theme(legend.position = "right", 
-              legend.direction="vertical",
-              legend.text = element_text(size=15), 
-              legend.key = element_rect(fill = "white"),
-              legend.title = element_blank(),
-              legend.key.size = unit(0.5, "cm"),
-              legend.spacing.x = unit(0.1, "cm")) 
-rda_plot
-
-
-# Add arrows to RDA plot. 
-rda_triplot <- rda_plot +
-  geom_segment(data = df2_species, aes(x = 0, xend = RDA1, y=0, yend = PC1), 
-               color = "black", size = 1, arrow = arrow(length = unit(0.02, "npc"))) +
-  geom_text(data = df2_species, 
-            aes(x = RDA1, y = PC1, label = rownames(df2_species),
-                hjust = 0.5 * (1 - sign(RDA1)), vjust = 0.5 * (1 - sign(PC1))), 
-            color = "black", size = 2.5) +
-  xlab("RDA1 (2.7%)") + ylab("PC1 (26%)")
-rda_triplot
-
-ggsave("analysis/figures/main-text/figure2A_RDA-triplot.pdf", 
-       plot = rda_triplot, width = 8, height = 6, unit = "in", dpi = 600)
-
-# figure 2B #
-
-clineMax_plot <- ggplot(famMeans_clineMax, aes(x = gmis, y = clinemax)) +
+clineMax_plot <- ggplot(famMeans_clineMax, aes(x = Distance_to_core, y = clinemax)) +
   geom_point(size = 3, colour = "black") +
   geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
   ng1
 clineMax_plot
 
-ggsave("analysis/figures/main-text/figure2B_clineMax_by_distance.pdf", 
+ggsave("analysis/figures/main-text/PDFs/raw/figure1B_clineMax_by_distance.pdf", 
        plot = clineMax_plot, width = 8, height = 6, unit = "in", dpi = 600)
 
-## FIGURE 3 ##
+## FIGURE 2 ##
 
-# figure 3A #
+# figure 2A #
 
 cols <- c("BB"="#FF0000","HB"="#F2AD00","SB"="#5BBCD6")
 linetype <- c("BB"="dashed","HB"="dotted","SB"="dotdash")
@@ -449,10 +410,10 @@ plotPoll <-
               legend.direction = "horizontal")
 plotPoll
 
-ggsave("analysis/figures/main-text/figure3A_visitsPerInf_by_Distance.pdf", 
+ggsave("analysis/figures/main-text/PDFs/raw/figure2A_visitsPerInf_by_Distance.pdf", 
        plot = plotPoll, width = 8, height = 6, unit = "in", dpi = 600)
 
-# figure 3B #
+# figure 2B #
 
 linetypeSeedFlwrs <- c("Field" = "dashed", "CG" = "dotted")
 seedPerFlwr_plot <- ggplot(seedsPerFlwr, aes(x = Distance_to_core, y = Seeds_per_flower)) +
@@ -478,14 +439,18 @@ seedPerFlwr_plot <- ggplot(seedsPerFlwr, aes(x = Distance_to_core, y = Seeds_per
               legend.spacing.x = unit(0.1, "cm"))
 seedPerFlwr_plot
 
-ggsave("analysis/figures/main-text/figure3B_seeds_per_flower.pdf", 
+ggsave("analysis/figures/main-text/PDFs/raw/figure2B_seeds_per_flower.pdf", 
        plot = seedPerFlwr_plot, width = 8, height = 6, unit = "in", dpi = 600)
 
 #### FIGURES: SUPPLEMENTARY MATERIALS ####
 
 ## FIGURE S1 ##
 
-# Figure S1A: Imperv. vs. distance
+#Figure S1 is a picture
+
+## FIGURE S2 ##
+
+# Figure S2A: Imperv. vs. distance
 imperv_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = Imperv)) +
   geom_point(size = 2.5) +
   geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
@@ -493,7 +458,7 @@ imperv_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = Imperv)) 
   ng1
 imperv_vs_distance
 
-ggsave("analysis/figures/sup-mat/figureS1a_Imperv_vs.distance.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS2a_Imperv_vs.distance.pdf", 
        plot = imperv_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
 
 # Figure S2B: Pop Dens vs. distance
@@ -504,11 +469,10 @@ popDens_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = popDens)
   ng1
 popDens_vs_distance
 
-ggsave("analysis/figures/sup-mat/figureS1b_popDens_vs.distance.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS2b_popDens_vs.distance.pdf", 
        plot = popDens_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
 
-
-## FIGURE S2
+## FIGURE S3 ##
 
 dMax_plot <- ggplot(famMeans_Dmax, aes(x = Distance_to_core, y = dmax)) +
   geom_point(size = 3, colour = "black") +
@@ -517,27 +481,163 @@ dMax_plot <- ggplot(famMeans_Dmax, aes(x = Distance_to_core, y = dmax)) +
   ng1
 dMax_plot
 
-ggsave("analysis/figures/sup-mat/PDFs/figureS2_dMax_by_distance.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS3_dMax_by_distance.pdf", 
        plot = dMax_plot, width = 8, height = 6, unit = "in", dpi = 600)
 
+## FIGURE S4 ##
+
+# Extract RDA1 and PC1 site scores
+df_sites  <- data.frame(scores(rdaFam, display = "sites", scaling = "sites")[,1:2]) %>%
+  # rownames_to_column(var = "Population") %>%
+  # mutate(Population = seq(1:27)) %>%
+  cbind(., famMeans_forRDA %>% dplyr::select(Population, gmis))
+
+# Extract RDA1 and PC1 species scores
+df2_species  <- data.frame(scores(rdaFam, display = "species", scaling = "species")[,1:2])     # loadings for PC1 and PC2
+
+# Plot site scores along first 2 axes. Colour points by distance
+rda_plot <- ggplot(df_sites, aes(x = RDA1, y = PC1)) + 
+  geom_point(size = 3, shape = 21, colour = "black", aes(fill = gmis)) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  scale_fill_gradient(low = "white", high = "black",
+                      limits = c(0, 50), breaks = seq(0, 50, 10)) +
+  guides(fill = guide_colorbar(ticks = FALSE,
+                               barwidth = 1.5, 
+                               barheight = 15)) +
+  ng1 + theme(legend.position = "right", 
+              legend.direction="vertical",
+              legend.text = element_text(size=15), 
+              legend.key = element_rect(fill = "white"),
+              legend.title = element_blank(),
+              legend.key.size = unit(0.5, "cm"),
+              legend.spacing.x = unit(0.1, "cm")) 
+rda_plot
 
 
-## FIGURE S1
+# Add arrows to RDA plot. 
+rda_triplot <- rda_plot +
+  geom_segment(data = df2_species, aes(x = 0, xend = RDA1, y=0, yend = PC1), 
+               color = "black", size = 1, arrow = arrow(length = unit(0.02, "npc"))) +
+  geom_text(data = df2_species, 
+            aes(x = RDA1, y = PC1, label = rownames(df2_species),
+                hjust = 0.5 * (1 - sign(RDA1)), vjust = 0.5 * (1 - sign(PC1))), 
+            color = "black", size = 2.5) +
+  xlab("RDA1 (2.7%)") + ylab("PC1 (26%)")
+rda_triplot
+
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS4_RDA-triplot.pdf", 
+       plot = rda_triplot, width = 8, height = 6, unit = "in", dpi = 600)
+
+
+## FIGURE S5
+
+rdaFam_permuteDist <- data.frame(rdaFam_anovaStats$permutations) %>% 
+  rename("permutations" = "rdaFam_anovaStats.permutations") %>%  
+  ggplot(., aes(x = permutations)) +
+  geom_histogram(fill = "white", colour = "black") + 
+  xlab("F-statistic") + ylab("Count") + 
+  coord_cartesian(xlim = c(0, 5.55)) + scale_x_continuous(breaks = seq(0, 5, 1)) +
+  geom_vline(xintercept = rdaFam_anovaStats$statistic, linetype = "dashed",
+             size = 1) +
+  ng1
+rdaFam_permuteDist
+
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS5_rdaFam_permuteDist.pdf", 
+       plot = rdaFam_permuteDist, width = 8, height = 6, unit = "in", dpi = 600)
+
+## FIGURE S6 & S7 ##
+
+#' Generates biplot of with response variable against predictor variable
+#'     Writes biplot to disk in outpath.
+#'
+#' @param df Dataframe containing variables that will be plotted as columns
+#' @param response_var Variable to be plotted on y-axis
+#' @param outpath Path to which plot will be written
+#' @param figID Figure numbe and letter (e.g. Figure 2a)
+#' 
+#' @return None. Writes plot to disk.
+create_Biplot <- function(df, response_var, outpath, figID){
+  
+  # print(path)
+  response_vector <- df %>% pull(response_var)
+  
+  plot <- df %>%
+    ggplot(., aes_string(x = "Distance_to_core", y = response_var)) +
+    geom_point(colour = "black", size = 2.5) +
+    geom_smooth(method = "lm", se = FALSE, colour = "black", size = 1) + 
+    ylab(response_var) + xlab("Source population distance from the urban core (km)") +
+    ng1
+  
+  path <- paste0(outpath, figID, "_", response_var, "_by_distance", ".pdf")
+  
+  # Write dataframe
+  ggsave(filename = path, plot = plot, device = "pdf",
+         width = 6, height = 6, dpi = 300)
+  
+}
+
+outpath <- "analysis/figures/sup-mat/PDFs/raw/"
+
+# Figure S6a
+create_Biplot(df = famMeans, response_var = "Time_to_germination", 
+              outpath = outpath, figID = "figureS6a")
+# Figure S6b
+create_Biplot(df = famMeans, response_var = "Days_to_flower", 
+              outpath = outpath, figID = "figureS6b")
+# Figure S6c
+create_Biplot(df = famMeans, response_var = "Veget_biomass", 
+              outpath = outpath, figID = "figureS6c")
+# Figure S6d
+create_Biplot(df = famMeans, response_var = "Avg_bnr_lgth", 
+              outpath = outpath, figID = "figureS6d")
+# Figure S6e
+create_Biplot(df = famMeans, response_var = "Avg_stolon_thick", 
+              outpath = outpath, figID = "figureS6e")
+# Figure S6f
+create_Biplot(df = famMeans, response_var = "freqHCN", 
+              outpath = outpath, figID = "figureS6f")
+
+## FIGURE S7 ##
+
+# Figure S7a
+create_Biplot(df = famMeans, response_var = "Num_Inf", 
+              outpath = outpath, figID = "figureS7a")
+# Figure S7b
+create_Biplot(df = famMeans, response_var = "Reprod_biomass", 
+              outpath = outpath, figID = "figureS7b")
+# Figure S7c
+create_Biplot(df = famMeans, response_var = "Avg_bnr_wdth", 
+              outpath = outpath, figID = "figureS7c")
+# Figure S7d
+create_Biplot(df = famMeans, response_var = "Avg_peducle_lgth", 
+              outpath = outpath, figID = "figureS7d")
+# Figure S7e
+create_Biplot(df = famMeans, response_var = "Avg_num_flwrs", 
+              outpath = outpath, figID = "figureS7e")
+# Figure S7f
+create_Biplot(df = famMeans, response_var = "Avg_leaf_wdth", 
+              outpath = outpath, figID = "figureS7f")
+# Figure S7g
+create_Biplot(df = famMeans, response_var = "Avg_leaf_lgth", 
+              outpath = outpath, figID = "figureS7g")
+# Figure S7h
+create_Biplot(df = famMeans, response_var = "Avg_petiole_lgth", 
+              outpath = outpath, figID = "figureS7h")
+# Figure S7i
+create_Biplot(df = famMeans, response_var = "sex_asex", 
+              outpath = outpath, figID = "figureS7i")
+
+## FIGURE S8 ##
 
 # Load in population mean dataset
-popMeans <- read_csv("data-clean/experimentalData_popMeans.csv")
-
-# Subset data for RDA
-popMeans_forRDA <- popMeans %>%
-  # select(-Seeds_per_flower, -Num_Cyano) %>%
-  select(-Avg_seeds_per_flower) %>%
-  select(Population, Distance_to_core, Time_to_germination_C:Avg_stolon_thick_C, freqHCN) %>% 
-  na.omit()
+popMeans <- read_csv("data-clean/experimentalData_popMeans.csv") %>% 
+  dplyr::select(Population, Distance_to_core, Time_to_germination_C:freqHCN_C) 
 
 # Perform RDA with multiple traits as response, distance as sole predictors
-rdaPop <- rda(popMeans_forRDA %>% 
-                select(Time_to_germination_C:freqHCN) ~ 
-                popMeans_forRDA$Distance_to_core, 
+rdaPop <- rda(popMeans %>% 
+                select(Time_to_germination_C:freqHCN_C) ~ 
+                popMeans$Distance_to_core, 
               scale = TRUE, na.action = "na.omit")
 summary(rdaPop)
 
@@ -567,7 +667,7 @@ indPlantData <- indPlantData %>%
            (Avg_leaf_wdth_C * species_scoresPop["Avg_leaf_wdth_C"]) +
            (Time_to_germination_C * species_scoresPop["Avg_leaf_lgth_C"]) +
            (Avg_stolon_thick_C * species_scoresPop["Avg_stolon_thick_C"]) +
-           (HCN_Results * species_scoresPop["freqHCN"]))
+           (HCN_Results * species_scoresPop["freqHCN_C"]))
 
 popMeans_clineMax <- indPlantData %>% 
   group_by(Population, Distance_to_core) %>% 
@@ -577,17 +677,16 @@ popMeans_clineMax <- indPlantData %>%
 clineMax_modPop <- lm(clinemaxPop ~ Distance_to_core, data = popMeans_clineMax)
 summary(clineMax_modPop)
 
-# figure S1A #
+# figure S8A #
 
 # Extract RDA1 and PC1 site scores
 df_sitesPop  <- data.frame(scores(rdaPop, display = "sites", scaling = "sites")[,1:2]) %>%
   # rownames_to_column(var = "Population") %>%
   # mutate(Population = seq(1:27)) %>%
-  cbind(., popMeans_forRDA %>% select(Population, Distance_to_core))
+  cbind(., popMeans %>% select(Population, Distance_to_core))
 
 # Extract RDA1 and PC1 species scores
 df2_speciesPop  <- data.frame(scores(rdaPop, display = "species", scaling = "species")[,1:2])     # loadings for PC1 and PC2
-row.names(df_sitesPop) <- seq(1:27)
 
 # Plot site scores along first 2 axes. Colour points by distance
 rda_plotPop <- ggplot(df_sitesPop, aes(x = RDA1, y = PC1)) + 
@@ -618,10 +717,10 @@ rda_triplotPop <- rda_plotPop +
   xlab("RDA1 (2.7%)") + ylab("PC1 (26%)")
 rda_triplotPop
 
-ggsave("analysis/figures/sup-mat/figureS1A_RDA-triplotPop.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS8a_RDA-triplotPop.pdf", 
        plot = rda_triplotPop, width = 8, height = 6, unit = "in", dpi = 600)
 
-# figure S1B #
+# figure S8B #
 
 clineMax_plotPop <- ggplot(popMeans_clineMax, aes(x = Distance_to_core, y = clinemaxPop)) +
   geom_point(size = 3.5, colour = "black") +
@@ -629,114 +728,10 @@ clineMax_plotPop <- ggplot(popMeans_clineMax, aes(x = Distance_to_core, y = clin
   ng1
 clineMax_plotPop
 
-ggsave("analysis/figures/sup-mat/figureS1B_clineMaxPop_by_distance.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS8B_clineMaxPop_by_distance.pdf", 
        plot = clineMax_plotPop, width = 8, height = 6, unit = "in", dpi = 600)
 
-
-
-
-## FIGURE S3
-
-rdaFam_permuteDist <- data.frame(rdaFam_anovaStats$permutations) %>% 
-  rename("permutations" = "rdaFam_anovaStats.permutations") %>%  
-  ggplot(., aes(x = permutations)) +
-  geom_histogram(fill = "white", colour = "black") + 
-  xlab("F-statistic") + ylab("Count") + 
-  coord_cartesian(xlim = c(0, 5.55)) + scale_x_continuous(breaks = seq(0, 5, 1)) +
-  geom_vline(xintercept = rdaFam_anovaStats$statistic, linetype = "dashed",
-             size = 1) +
-  ng1
-rdaFam_permuteDist
-
-ggsave("analysis/figures/sup-mat/figureS3_rdaFam_permuteDist.pdf", 
-       plot = rdaFam_permuteDist, width = 8, height = 6, unit = "in", dpi = 600)
-
-
-## FIGURE S4
-
-#' Generates biplot of with response variable against predictor variable
-#'     Writes biplot to disk in outpath.
-#'
-#' @param df Dataframe containing variables that will be plotted as columns
-#' @param response_var Variable to be plotted on y-axis
-#' @param outpath Path to which plot will be written
-#' @param figID Figure numbe and letter (e.g. Figure 2a)
-#' 
-#' @return None. Writes plot to disk.
-create_Biplot <- function(df, response_var, outpath, figID){
-  
-  # print(path)
-  response_vector <- df %>% pull(response_var)
-  
-  plot <- df %>%
-    ggplot(., aes_string(x = "Distance_to_core", y = response_var)) +
-    geom_point(colour = "black", size = 2.5) +
-    geom_smooth(method = "lm", se = FALSE, colour = "black", size = 1) + 
-    ylab(response_var) + xlab("Source population distance from the urban core (km)") +
-    ng1
-    
-    path <- paste0(outpath, figID, "_", response_var, "_by_distance", ".pdf")
-    
-    # Write dataframe
-    ggsave(filename = path, plot = plot, device = "pdf",
-           width = 6, height = 6, dpi = 300)
-  
-}
-
-
-outpath <- "analysis/figures/sup-mat/"
-
-# Figure S4a
-create_Biplot(df = famMeans, response_var = "Time_to_germination", 
-              outpath = outpath, figID = "figureS4a")
-# Figure S4b
-create_Biplot(df = famMeans, response_var = "Days_to_flower", 
-              outpath = outpath, figID = "figureS4b")
-# Figure S4c
-create_Biplot(df = famMeans, response_var = "Veget_biomass", 
-              outpath = outpath, figID = "figureS4c")
-# Figure S4d
-create_Biplot(df = famMeans, response_var = "Avg_bnr_lgth", 
-              outpath = outpath, figID = "figureS4d")
-# Figure S4e
-create_Biplot(df = famMeans, response_var = "Avg_stolon_thick", 
-              outpath = outpath, figID = "figureS4e")
-# Figure S4f
-create_Biplot(df = famMeans, response_var = "freqHCN", 
-              outpath = outpath, figID = "figureS4f")
-
-## FIGURE S5
-
-# Figure S5a
-create_Biplot(df = famMeans, response_var = "Num_Inf", 
-              outpath = outpath, figID = "figureS5a")
-# Figure S5b
-create_Biplot(df = famMeans, response_var = "Reprod_biomass", 
-              outpath = outpath, figID = "figureS5b")
-# Figure S5c
-create_Biplot(df = famMeans, response_var = "Avg_bnr_wdth", 
-              outpath = outpath, figID = "figureS5c")
-# Figure S5d
-create_Biplot(df = famMeans, response_var = "Avg_peducle_lgth", 
-              outpath = outpath, figID = "figureS5d")
-# Figure S5e
-create_Biplot(df = famMeans, response_var = "Avg_num_flwrs", 
-              outpath = outpath, figID = "figureS5e")
-# Figure S5f
-create_Biplot(df = famMeans, response_var = "Avg_leaf_wdth", 
-              outpath = outpath, figID = "figureS5f")
-# Figure S5g
-create_Biplot(df = famMeans, response_var = "Avg_leaf_lgth", 
-              outpath = outpath, figID = "figureS5g")
-# Figure S5h
-create_Biplot(df = famMeans, response_var = "Avg_petiole_lgth", 
-              outpath = outpath, figID = "figureS5h")
-# Figure S5i
-create_Biplot(df = famMeans, response_var = "sex_asex", 
-              outpath = outpath, figID = "figureS5i")
-
-
-## FIGURE S6
+## FIGURE S9 ##
 
 cols <- c("BB"="#FF0000","HB"="#F2AD00","SB"="#5BBCD6")
 linetype <- c("BB"="dashed","HB"="dotted","SB"="dotdash")
@@ -793,7 +788,7 @@ plotPoll_lin <-
               legend.direction = "horizontal")
 plotPoll_lin
 
-ggsave("analysis/figures/sup-mat/figureS6_visitsPerInf_by_Distance_linear.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS9_visitsPerInf_by_Distance_linear.pdf", 
        plot = plotPoll_lin, width = 8, height = 6, unit = "in", dpi = 600)
 
 
@@ -801,7 +796,7 @@ ggsave("analysis/figures/sup-mat/figureS6_visitsPerInf_by_Distance_linear.pdf",
 
 ## TABLE S1 ##
 
-tableS1 <- cov(as.matrix(popMeans)) 
+tableS1 <- cov(as.matrix(popMeans %>% dplyr::select(Time_to_germination_C:freqHCN_C))) 
 tableS1[upper.tri(tableS1)] <- NA
 tableS1 <- tableS1 %>% 
   cbind(., trait_loadings) %>% 
@@ -882,3 +877,4 @@ tableS2 <- rbind(germTimeVector, FFVector, vegBioVector, bnrLVector, stolVector,
   setNames(., header)
 
 write_csv(tableS2, "analysis/tables/tableS2_traitRegSummary.csv", col_names = TRUE)
+
