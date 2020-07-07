@@ -31,5 +31,6 @@ please follow the following steps:
 1. `git clone` this repository or download it as a zip folder
 2. Open `Rstudio`, go to `file > Open project` and open the `SIC.Rproj`
 Rproject associated with this repository
+3. Run `renv::restore()` in your R console. Requires `renv` package (see [THIS](https://rstudio.github.io/renv/articles/renv.html) vignette)
 3. The analyses can be prformed by running [scripts/masterScript_analyses.R](
 scripts/masterScript_analyses.R)
