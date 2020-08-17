@@ -5,6 +5,7 @@ library(tidyverse)
 library(vegan)
 library(car)
 library(Hmisc)
+library(patchwork)
 
 #### GERMINATION ####
 
@@ -537,6 +538,85 @@ ggsave("analysis/figures/main-text/PDFs/raw/figure2B_seeds_per_flower.pdf",
        plot = seedPerFlwr_plot, width = 8, height = 6, unit = "in", dpi = 600)
 
 #### FIGURES: SUPPLEMENTARY MATERIALS ####
+
+## UNPLACED
+
+beta_1000 <- round(summary(clineMax_mod_gmis1000)$coefficients[2], 3)
+pval_1000 <- summary(clineMax_mod_gmis1000)$coefficients[8]
+pval_1000 <- ifelse(pval_1000 < 0.001, "< 0.001", round(pval_1000, 3))
+rsq_1000 <- round(summary(clineMax_mod_gmis1000)$r.squared, 3)
+clineMax_plot_gmis1000 <- ggplot(famMeans_clineMax_gmis1000, aes(x = gmis1000, y = clinemax_gmis1000)) +
+  geom_point(size = 3, colour = "black") +
+  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
+  labs(x="% Impervious surface (1000m)", y=expression(atop(
+    Family-mean~multivariate, phenotype~score~"("*cline[max]*")")), tag="(a)") +
+  annotate(geom = "text", parse = TRUE,
+           label = paste("italic(beta)==", beta_1000),
+           x =  0,
+           y = 0.17,
+           size = 5,
+           hjust = "left") +
+  annotate(geom = "text", parse = TRUE,
+           label = ifelse(is.character(pval_1000),
+                          paste("italic(P)", pval_1000),
+                          paste("italic(P)==", pval_1000)),
+           x =  0,
+           y = 0.1,
+           size = 5,
+           hjust = "left") +
+  annotate(geom = "text", parse = TRUE,
+           label = paste("R^2==", rsq_1000),
+           x =  0,
+           y = 0.03,
+           size = 5,
+           hjust = "left") +
+  ng1 + theme(plot.tag = element_text(size = 15),
+              plot.tag.position = c(0.15, 1.08),
+              plot.margin = margin(-2, 0.5, -2, 0, "cm"),
+              axis.title.y = element_text(vjust = 2, size = 15),
+              axis.title.x = element_text(vjust = 0.1, size = 15))
+clineMax_plot_gmis1000
+
+beta_30 <- round(summary(clineMax_mod_gmis30)$coefficients[2], 3)
+pval_30 <- summary(clineMax_mod_gmis30)$coefficients[8]
+pval_30 <- ifelse(pval_30 < 0.001, "< 0.001", round(pval_30, 3))
+rsq_30 <- round(summary(clineMax_mod_gmis30)$r.squared, 3)
+clineMax_plot_gmis30 <- ggplot(famMeans_clineMax_gmis30, aes(x = gmis30, y = clinemax_gmis30)) +
+  geom_point(size = 3, colour = "black") +
+  geom_smooth(method = "lm", size = 2.0, colour = "black", se = FALSE) +
+  labs(x="% Impervious surface (30m)", y="", tag="(b)") +
+  annotate(geom = "text", parse = TRUE,
+           label = paste("italic(beta)==", beta_30),
+           x =  0,
+           y = -0.55,
+           size = 5,
+           hjust = "left") +
+  annotate(geom = "text", parse = TRUE,
+           label = ifelse(is.character(pval_30),
+                          paste("italic(P)", pval_30),
+                          paste("italic(P)==", pval_30)),
+           x =  0,
+           y = -0.67,
+           size = 5,
+           hjust = "left") +
+  annotate(geom = "text", parse = TRUE,
+           label = paste("R^2==", rsq_30),
+           x =  0,
+           y = -0.77,
+           size = 5,
+           hjust = "left") +
+  ng1 + theme(plot.tag = element_text(size = 15),
+              plot.tag.position = c(0.08, 1.08),
+              plot.margin = margin(-2, 0.5, -2, 0, "cm"),
+              axis.title.y = element_text(vjust = 2, size = 15),
+              axis.title.x = element_text(vjust = 0.1, size = 15))
+clineMax_plot_gmis30
+
+gmis_clineMaxplot <- clineMax_plot_gmis1000 + clineMax_plot_gmis30 
+
+ggsave("analysis/figures/sup-mat/PDFs/_unplaced_clineMax_vs_gmis.pdf", 
+       plot = gmis_clineMaxplot, width = 10, height = 8, unit = "in", dpi = 600)
+
 
 ## FIGURE S1 ##
 
