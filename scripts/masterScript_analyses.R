@@ -64,7 +64,7 @@ indPlantData <- indPlantData %>%
            (HCN_Results * trait_loadings["freqHCN_C"]))
 
 famMeans_Dmax <- indPlantData %>% 
-  group_by(Family, Distance_to_core, gmis) %>% 
+  group_by(Family, Distance_to_core) %>% 
   summarise(dmax = mean(dmax, na.rm = TRUE)) %>% 
   ungroup()
 
@@ -81,7 +81,7 @@ famMeans <- read_csv("data-clean/experimentalData_familyMeans.csv")
 famMeans_forRDA <- famMeans %>% 
   # select(-Seeds_per_flower, -Num_Cyano) %>%
   dplyr::select(-total_plants, -n_HCN, -Avg_seeds_per_flower) %>%
-  dplyr::select(Population, Distance_to_core, gmis, Family, Time_to_germination_C:freqHCN_C) %>% 
+  dplyr::select(Population, Distance_to_core, gmis1000, gmis30, Family, Time_to_germination_C:freqHCN_C) %>% 
   na.omit()
 
 # Perform RDA with multiple traits as response, distance as sole predictors
@@ -122,7 +122,7 @@ indPlantData <- indPlantData %>%
            (HCN_Results * species_scores["freqHCN_C"]))
   
 famMeans_clineMax <- indPlantData %>% 
-  group_by(Family, Distance_to_core) %>% 
+  group_by(Family, Distance_to_core, gmis30) %>% 
   summarise(clinemax = mean(clinemax, na.rm = TRUE)) 
 
 # Model testing for cline in cline_max
@@ -207,14 +207,14 @@ polldata <- read.csv('data-clean/pollinatorObservations.csv')
 # analysis of pollinator observations
 # impute zeros for unobserved polls
 complete_polldata <- polldata %>% 
-  group_by(Population,Morph, gmis, Distance_to_core) %>% 
+  group_by(Population,Morph, Distance_to_core) %>% 
   complete(Population, Morph, fill = list(Num_Visit = 0)) %>%
   filter(Morph != "Syrphid")
 
 # Summarize data by pollinator functional group
 # Used for visit/infl analysis
 visitshare_polldata <- complete_polldata %>% 
-  group_by(Population, gmis, Distance_to_core, Morph) %>% 
+  group_by(Population, Distance_to_core, Morph) %>% 
   # calculate number of individuals observed per site per morph; number of inflorescence, number of visit per infl.
   summarise(Num.Ind = n(),
             Num_Visit = sum(Num_Visit),
@@ -240,7 +240,7 @@ Anova(pollVisit, type = "III") #Type 3 for interpreting interaction
 # Load in seeds per flower from field-collected inflorescences
 seedFlwrFieldData <- read_csv("data-clean/flwrSeedRatio_fieldPlants.csv") %>%
   dplyr::select(-X1, -Comments) %>%
-  group_by(Population, gmis, Distance_to_core) %>%
+  group_by(Population, Distance_to_core) %>%
   summarize(count = n(),
             Seeds_per_inf = sum(Num.Seeds) / count,
             Seeds_per_flower = mean(Seeds_per_flower),
@@ -249,7 +249,7 @@ seedFlwrFieldData <- read_csv("data-clean/flwrSeedRatio_fieldPlants.csv") %>%
 # Retrieve seeds per flower from common garden plants
 popMeans <- read_csv("data-clean/experimentalData_popMeans.csv")
 seedFlwrComGarData <- popMeans %>%
-  dplyr::select(Population, gmis, Distance_to_core, Avg_num_flwrs, Avg_seeds_per_flower, Avg_seeds_per_inf) %>% 
+  dplyr::select(Population, Distance_to_core, Avg_num_flwrs, Avg_seeds_per_flower, Avg_seeds_per_inf) %>% 
   rename("Seeds_per_flower" = "Avg_seeds_per_flower",
          "Seeds_per_inf" = "Avg_seeds_per_inf",
          "Num_flwrs" = "Avg_num_flwrs")
@@ -320,6 +320,100 @@ flattenCorrMatrix <- function(cormat, pmat) {
 corMat_flat <- flattenCorrMatrix(res2$r, res2$P) %>% 
   mutate(p = round(p, 3))
 mean(corMat_flat$cor)
+
+#### SUPPLEMENTAL — MULTIVARIATE TRAIT CHANGE: FAMILY MEANS WITH GMIS ####
+
+### 1000 Meter GMIS buffer ###
+
+# Perform RDA with multiple traits as response, distance as sole predictors
+rdaFam_gmis1000 <- rda(famMeans_forRDA %>% 
+                dplyr::select(Time_to_germination_C:freqHCN_C) ~ 
+                famMeans_forRDA$gmis1000, 
+              na.action = "na.omit", scale = TRUE)
+summary(rdaFam_gmis1000)
+
+# Permutation based test of significance of distance term in RDA
+set.seed(42)
+rdaFam_anova <- anova.cca(rdaFam_gmis1000, by = "term", permutations = 10000)
+rdaFam_anovaStats <- permustats(rdaFam_anova)
+
+# Extract canonical coefficients of traits onto RDA1 (i.e. 'species scores')
+species_scores <- scores(rdaFam_gmis1000)$species[,"RDA1"]
+
+# Calculate cline_max according to Stock et al. 
+# Traits are first standardized by dividing by experiment-wide mean.
+# Standardized trait values are multiplied by their cannonical regression
+# coefficients on RDA. This is done for each trait and then summed. 
+indPlantData <- indPlantData %>% 
+  mutate(clinemax_gmis1000 = 
+           (Time_to_germination_C * species_scores["Time_to_germination_C"]) +
+           (Days_to_flower_C * species_scores["Days_to_flower_C"]) +
+           (Num_Inf_C * species_scores["Num_Inf_C"]) +
+           (Reprod_biomass_C * species_scores["Reprod_biomass_C"]) +
+           (Veget_biomass_C * species_scores["Veget_biomass_C"]) +
+           (Avg_bnr_wdth_C * species_scores["Avg_bnr_wdth_C"]) +
+           (Avg_bnr_lgth_C * species_scores["Avg_bnr_lgth_C"]) +
+           (Avg_petiole_lgth_C * species_scores["Avg_petiole_lgth_C"]) +
+           (Avg_peducle_lgth_C * species_scores["Avg_peducle_lgth_C"]) +
+           (Avg_num_flwrs_C * species_scores["Avg_num_flwrs_C"]) +
+           (Avg_leaf_wdth_C * species_scores["Avg_leaf_wdth_C"]) +
+           (Time_to_germination_C * species_scores["Avg_leaf_lgth_C"]) +
+           (Avg_stolon_thick_C * species_scores["Avg_stolon_thick_C"]) +
+           (HCN_Results * species_scores["freqHCN_C"]))
+
+famMeans_clineMax_gmis1000 <- indPlantData %>% 
+  group_by(Family, gmis1000) %>% 
+  summarise(clinemax_gmis1000 = mean(clinemax_gmis1000, na.rm = TRUE)) 
+
+# Model testing for cline in cline_max
+clineMax_mod_gmis1000 <- lm(clinemax_gmis1000 ~ gmis1000, data = famMeans_clineMax_gmis1000)
+summary(clineMax_mod_gmis1000)
+
+### 30 Meter GMIS buffer ###
+
+# Perform RDA with multiple traits as response, distance as sole predictors
+rdaFam_gmis30 <- rda(famMeans_forRDA %>% 
+                         dplyr::select(Time_to_germination_C:freqHCN_C) ~ 
+                         famMeans_forRDA$gmis30, 
+                       na.action = "na.omit", scale = TRUE)
+summary(rdaFam_gmis30)
+
+# Permutation based test of significance of distance term in RDA
+set.seed(42)
+rdaFam_anova <- anova.cca(rdaFam_gmis30, by = "term", permutations = 10000)
+rdaFam_anovaStats <- permustats(rdaFam_anova)
+
+# Extract canonical coefficients of traits onto RDA1 (i.e. 'species scores')
+species_scores <- scores(rdaFam_gmis30)$species[,"RDA1"]
+
+# Calculate cline_max according to Stock et al. 
+# Traits are first standardized by dividing by experiment-wide mean.
+# Standardized trait values are multiplied by their cannonical regression
+# coefficients on RDA. This is done for each trait and then summed. 
+indPlantData <- indPlantData %>% 
+  mutate(clinemax_gmis30 = 
+           (Time_to_germination_C * species_scores["Time_to_germination_C"]) +
+           (Days_to_flower_C * species_scores["Days_to_flower_C"]) +
+           (Num_Inf_C * species_scores["Num_Inf_C"]) +
+           (Reprod_biomass_C * species_scores["Reprod_biomass_C"]) +
+           (Veget_biomass_C * species_scores["Veget_biomass_C"]) +
+           (Avg_bnr_wdth_C * species_scores["Avg_bnr_wdth_C"]) +
+           (Avg_bnr_lgth_C * species_scores["Avg_bnr_lgth_C"]) +
+           (Avg_petiole_lgth_C * species_scores["Avg_petiole_lgth_C"]) +
+           (Avg_peducle_lgth_C * species_scores["Avg_peducle_lgth_C"]) +
+           (Avg_num_flwrs_C * species_scores["Avg_num_flwrs_C"]) +
+           (Avg_leaf_wdth_C * species_scores["Avg_leaf_wdth_C"]) +
+           (Time_to_germination_C * species_scores["Avg_leaf_lgth_C"]) +
+           (Avg_stolon_thick_C * species_scores["Avg_stolon_thick_C"]) +
+           (HCN_Results * species_scores["freqHCN_C"]))
+
+famMeans_clineMax_gmis30 <- indPlantData %>% 
+  group_by(Family, gmis30) %>% 
+  summarise(clinemax_gmis30 = mean(clinemax_gmis30, na.rm = TRUE)) 
+
+# Model testing for cline in cline_max
+clineMax_mod_gmis30 <- lm(clinemax_gmis30 ~ gmis30, data = famMeans_clineMax_gmis30)
+summary(clineMax_mod_gmis30)
 
 #### FIGURES: MAIN TEXT ####
 

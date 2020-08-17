@@ -16,13 +16,9 @@ latLongs <- read_csv("data-raw/populationLatLongs.csv") %>%
 pollinatorObservations <- pollinatorObservations %>%
   left_join(., latLongs, by = "Population")
 
-# Load GMIS (i.e., impervious surface dataset)
-gmis <- read_csv("data-clean/gmis.csv") %>% 
-  mutate(Population = as.character(Population))
-
 # Add impervious survafe values to data 
 pollinatorObservations <- pollinatorObservations %>% 
-  left_join(., gmis, by = "Population")
+  left_join(., gmis, by = c("Population", "Latitude", "Longitude"))
 
 # Use haversine formulation to add distance to urban core
 source("scripts/haversine.R")
