@@ -98,7 +98,7 @@ gmis <- read_csv("data-clean/gmis.csv") %>%
 
 # Add impervious survafe values to data 
 experimentalData_modified <- experimentalData_modified %>% 
-  left_join(., gmis, by = "Population")
+  left_join(., gmis, by = c("Population", "Longitude", "Latitude"))
 
 # Use haversine formulation to add distance to urban core and distance to common garden 
 source("scripts/haversine.R")

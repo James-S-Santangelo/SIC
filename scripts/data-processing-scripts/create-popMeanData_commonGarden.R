@@ -5,7 +5,7 @@ familyMeans <- read_csv("data-clean/experimentalData_familyMeans.csv")
 
 # Create population-mean dataset
 popMeans <- familyMeans %>%
-  group_by(Population, Latitude, Longitude, gmis, Distance_to_core, Distance_to_cg) %>%
+  group_by(Population, Latitude, Longitude, gmis1000, gmis30, Distance_to_core, Distance_to_cg) %>%
   summarize(Num_Plants = n(),
             Time_to_germination = mean(Time_to_germination, na.rm = TRUE),
             Days_to_flower = mean(Days_to_flower, na.rm = TRUE),

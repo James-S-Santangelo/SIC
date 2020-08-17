@@ -5,7 +5,7 @@ experimental_data <- read_csv("data-clean/experimentalData_individualPlants.csv"
 
 # Create family means dataset
 familyMeans <- experimental_data %>%
-  group_by(Family, Latitude, Longitude, gmis, Distance_to_core, Distance_to_cg) %>%
+  group_by(Family, Latitude, Longitude, gmis1000, gmis30, Distance_to_core, Distance_to_cg) %>%
   summarize(num_plants = n(),
             Time_to_germination = mean(Time_to_germination, na.rm = TRUE),
             Days_to_flower = mean(Days_to_flower, na.rm = TRUE),
