@@ -539,7 +539,35 @@ ggsave("analysis/figures/main-text/PDFs/raw/figure2B_seeds_per_flower.pdf",
 
 #### FIGURES: SUPPLEMENTARY MATERIALS ####
 
-## UNPLACED
+## FIGURE S1 ##
+
+#Figure S1 is a picture
+
+## FIGURE S2 ##
+
+# Figure S2A: Imperv. vs. distance
+imperv_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = Imperv)) +
+  geom_point(size = 2.5) +
+  geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
+  ylab('Impervious surface (%)') + xlab('Source population distance from urban core (km)') +
+  ng1
+imperv_vs_distance
+
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS2a_Imperv_vs.distance.pdf", 
+       plot = imperv_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
+
+# Figure S2B: Pop Dens vs. distance
+popDens_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = popDens)) +
+  geom_point(size = 2.5) +
+  geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
+  ylab(expression(~Human~population~density~(per~km^2))) + xlab('Source population distance from urban core (km)') +
+  ng1
+popDens_vs_distance
+
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS2b_popDens_vs.distance.pdf", 
+       plot = popDens_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
+
+## FIGURE S3 ##
 
 beta_1000 <- round(summary(clineMax_mod_gmis1000)$coefficients[2], 3)
 pval_1000 <- summary(clineMax_mod_gmis1000)$coefficients[8]
@@ -565,7 +593,7 @@ clineMax_plot_gmis1000 <- ggplot(famMeans_clineMax_gmis1000, aes(x = gmis1000, y
            size = 5,
            hjust = "left") +
   annotate(geom = "text", parse = TRUE,
-           label = paste("R^2==", rsq_1000),
+           label = paste("italic(r)^2==", rsq_1000),
            x =  0,
            y = 0.03,
            size = 5,
@@ -600,7 +628,7 @@ clineMax_plot_gmis30 <- ggplot(famMeans_clineMax_gmis30, aes(x = gmis30, y = cli
            size = 5,
            hjust = "left") +
   annotate(geom = "text", parse = TRUE,
-           label = paste("R^2==", rsq_30),
+           label = paste("italic(r)^2==", rsq_30),
            x =  0,
            y = -0.77,
            size = 5,
@@ -614,39 +642,10 @@ clineMax_plot_gmis30
 
 gmis_clineMaxplot <- clineMax_plot_gmis1000 + clineMax_plot_gmis30 
 
-ggsave("analysis/figures/sup-mat/PDFs/_unplaced_clineMax_vs_gmis.pdf", 
-       plot = gmis_clineMaxplot, width = 10, height = 8, unit = "in", dpi = 600)
+ggsave("analysis/figures/sup-mat/PDFs/figureS3_clineMax_vs_gmis.pdf", 
+       plot = gmis_clineMaxplot, width = 12, height = 10, unit = "in", dpi = 600)
 
-
-## FIGURE S1 ##
-
-#Figure S1 is a picture
-
-## FIGURE S2 ##
-
-# Figure S2A: Imperv. vs. distance
-imperv_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = Imperv)) +
-  geom_point(size = 2.5) +
-  geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
-  ylab('Impervious surface (%)') + xlab('Source population distance from urban core (km)') +
-  ng1
-imperv_vs_distance
-
-ggsave("analysis/figures/sup-mat/PDFs/raw/figureS2a_Imperv_vs.distance.pdf", 
-       plot = imperv_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
-
-# Figure S2B: Pop Dens vs. distance
-popDens_vs_distance <- ggplot(enviroData, aes(x = Distance_to_core, y = popDens)) +
-  geom_point(size = 2.5) +
-  geom_smooth(method = 'lm', colour = 'black', se = FALSE) + 
-  ylab(expression(~Human~population~density~(per~km^2))) + xlab('Source population distance from urban core (km)') +
-  ng1
-popDens_vs_distance
-
-ggsave("analysis/figures/sup-mat/PDFs/raw/figureS2b_popDens_vs.distance.pdf", 
-       plot = popDens_vs_distance, width = 6, height = 6, unit = "in", dpi = 600)
-
-## FIGURE S3 ##
+## FIGURE S4 ##
 
 dMax_plot <- ggplot(famMeans_Dmax, aes(x = Distance_to_core, y = dmax)) +
   geom_point(size = 3, colour = "black") +
@@ -655,10 +654,10 @@ dMax_plot <- ggplot(famMeans_Dmax, aes(x = Distance_to_core, y = dmax)) +
   ng1
 dMax_plot
 
-ggsave("analysis/figures/sup-mat/PDFs/raw/figureS3_dMax_by_distance.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS4_dMax_by_distance.pdf", 
        plot = dMax_plot, width = 8, height = 6, unit = "in", dpi = 600)
 
-## FIGURE S4 ##
+## FIGURE S5 ##
 
 # Extract RDA1 and PC1 site scores
 df_sites  <- data.frame(scores(rdaFam, display = "sites", scaling = "sites")[,1:2]) %>%
@@ -700,11 +699,11 @@ rda_triplot <- rda_plot +
   xlab("RDA1 (2.7%)") + ylab("PC1 (26%)")
 rda_triplot
 
-ggsave("analysis/figures/sup-mat/PDFs/raw/figureS4_RDA-triplot.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS5_RDA-triplot.pdf", 
        plot = rda_triplot, width = 8, height = 6, unit = "in", dpi = 600)
 
 
-## FIGURE S5
+## FIGURE S6
 
 rdaFam_permuteDist <- data.frame(rdaFam_anovaStats$permutations) %>% 
   rename("permutations" = "rdaFam_anovaStats.permutations") %>%  
@@ -717,10 +716,10 @@ rdaFam_permuteDist <- data.frame(rdaFam_anovaStats$permutations) %>%
   ng1
 rdaFam_permuteDist
 
-ggsave("analysis/figures/sup-mat/PDFs/raw/figureS5_rdaFam_permuteDist.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS6_rdaFam_permuteDist.pdf", 
        plot = rdaFam_permuteDist, width = 8, height = 6, unit = "in", dpi = 600)
 
-## FIGURE S6 & S7 ##
+## FIGURE S7 & S8 ##
 
 #' Generates biplot of with response variable against predictor variable
 #'     Writes biplot to disk in outpath.
@@ -753,56 +752,58 @@ create_Biplot <- function(df, response_var, outpath, figID){
 
 outpath <- "analysis/figures/sup-mat/PDFs/raw/"
 
-# Figure S6a
-create_Biplot(df = famMeans, response_var = "Time_to_germination", 
-              outpath = outpath, figID = "figureS6a")
-# Figure S6b
-create_Biplot(df = famMeans, response_var = "Days_to_flower", 
-              outpath = outpath, figID = "figureS6b")
-# Figure S6c
-create_Biplot(df = famMeans, response_var = "Veget_biomass", 
-              outpath = outpath, figID = "figureS6c")
-# Figure S6d
-create_Biplot(df = famMeans, response_var = "Avg_bnr_lgth", 
-              outpath = outpath, figID = "figureS6d")
-# Figure S6e
-create_Biplot(df = famMeans, response_var = "Avg_stolon_thick", 
-              outpath = outpath, figID = "figureS6e")
-# Figure S6f
-create_Biplot(df = famMeans, response_var = "freqHCN", 
-              outpath = outpath, figID = "figureS6f")
-
 ## FIGURE S7 ##
 
 # Figure S7a
-create_Biplot(df = famMeans, response_var = "Num_Inf", 
+create_Biplot(df = famMeans, response_var = "Time_to_germination", 
               outpath = outpath, figID = "figureS7a")
 # Figure S7b
-create_Biplot(df = famMeans, response_var = "Reprod_biomass", 
+create_Biplot(df = famMeans, response_var = "Days_to_flower", 
               outpath = outpath, figID = "figureS7b")
 # Figure S7c
-create_Biplot(df = famMeans, response_var = "Avg_bnr_wdth", 
+create_Biplot(df = famMeans, response_var = "Veget_biomass", 
               outpath = outpath, figID = "figureS7c")
 # Figure S7d
-create_Biplot(df = famMeans, response_var = "Avg_peducle_lgth", 
+create_Biplot(df = famMeans, response_var = "Avg_bnr_lgth", 
               outpath = outpath, figID = "figureS7d")
 # Figure S7e
-create_Biplot(df = famMeans, response_var = "Avg_num_flwrs", 
+create_Biplot(df = famMeans, response_var = "Avg_stolon_thick", 
               outpath = outpath, figID = "figureS7e")
 # Figure S7f
-create_Biplot(df = famMeans, response_var = "Avg_leaf_wdth", 
+create_Biplot(df = famMeans, response_var = "freqHCN", 
               outpath = outpath, figID = "figureS7f")
-# Figure S7g
-create_Biplot(df = famMeans, response_var = "Avg_leaf_lgth", 
-              outpath = outpath, figID = "figureS7g")
-# Figure S7h
-create_Biplot(df = famMeans, response_var = "Avg_petiole_lgth", 
-              outpath = outpath, figID = "figureS7h")
-# Figure S7i
-create_Biplot(df = famMeans, response_var = "sex_asex", 
-              outpath = outpath, figID = "figureS7i")
 
 ## FIGURE S8 ##
+
+# Figure S8a
+create_Biplot(df = famMeans, response_var = "Num_Inf", 
+              outpath = outpath, figID = "figureS8a")
+# Figure S8b
+create_Biplot(df = famMeans, response_var = "Reprod_biomass", 
+              outpath = outpath, figID = "figureS8b")
+# Figure S8c
+create_Biplot(df = famMeans, response_var = "Avg_bnr_wdth", 
+              outpath = outpath, figID = "figureS8c")
+# Figure S8d
+create_Biplot(df = famMeans, response_var = "Avg_peducle_lgth", 
+              outpath = outpath, figID = "figureS8d")
+# Figure S8e
+create_Biplot(df = famMeans, response_var = "Avg_num_flwrs", 
+              outpath = outpath, figID = "figureS8e")
+# Figure S8f
+create_Biplot(df = famMeans, response_var = "Avg_leaf_wdth", 
+              outpath = outpath, figID = "figureS8f")
+# Figure S8g
+create_Biplot(df = famMeans, response_var = "Avg_leaf_lgth", 
+              outpath = outpath, figID = "figureS8g")
+# Figure S8h
+create_Biplot(df = famMeans, response_var = "Avg_petiole_lgth", 
+              outpath = outpath, figID = "figureS8h")
+# Figure S8i
+create_Biplot(df = famMeans, response_var = "sex_asex", 
+              outpath = outpath, figID = "figureS8i")
+
+## FIGURE S9 ##
 
 # Load in population mean dataset
 popMeans <- read_csv("data-clean/experimentalData_popMeans.csv") %>% 
@@ -851,7 +852,7 @@ popMeans_clineMax <- indPlantData %>%
 clineMax_modPop <- lm(clinemaxPop ~ Distance_to_core, data = popMeans_clineMax)
 summary(clineMax_modPop)
 
-# figure S8A #
+# figure S9A #
 
 # Extract RDA1 and PC1 site scores
 df_sitesPop  <- data.frame(scores(rdaPop, display = "sites", scaling = "sites")[,1:2]) %>%
@@ -891,10 +892,10 @@ rda_triplotPop <- rda_plotPop +
   xlab("RDA1 (2.7%)") + ylab("PC1 (26%)")
 rda_triplotPop
 
-ggsave("analysis/figures/sup-mat/PDFs/raw/figureS8a_RDA-triplotPop.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS9a_RDA-triplotPop.pdf", 
        plot = rda_triplotPop, width = 8, height = 6, unit = "in", dpi = 600)
 
-# figure S8B #
+# figure S9B #
 
 clineMax_plotPop <- ggplot(popMeans_clineMax, aes(x = Distance_to_core, y = clinemaxPop)) +
   geom_point(size = 3.5, colour = "black") +
@@ -902,10 +903,10 @@ clineMax_plotPop <- ggplot(popMeans_clineMax, aes(x = Distance_to_core, y = clin
   ng1
 clineMax_plotPop
 
-ggsave("analysis/figures/sup-mat/PDFs/raw/figureS8B_clineMaxPop_by_distance.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS9b_clineMaxPop_by_distance.pdf", 
        plot = clineMax_plotPop, width = 8, height = 6, unit = "in", dpi = 600)
 
-## FIGURE S9 ##
+## FIGURE S10 ##
 
 cols <- c("BB"="#FF0000","HB"="#F2AD00","SB"="#5BBCD6")
 linetype <- c("BB"="dashed","HB"="dotted","SB"="dotdash")
@@ -962,7 +963,7 @@ plotPoll_lin <-
               legend.direction = "horizontal")
 plotPoll_lin
 
-ggsave("analysis/figures/sup-mat/PDFs/raw/figureS9_visitsPerInf_by_Distance_linear.pdf", 
+ggsave("analysis/figures/sup-mat/PDFs/raw/figureS10_visitsPerInf_by_Distance_linear.pdf", 
        plot = plotPoll_lin, width = 8, height = 6, unit = "in", dpi = 600)
 
 
