@@ -123,7 +123,7 @@ indPlantData <- indPlantData %>%
            (HCN_Results * species_scores["freqHCN_C"]))
   
 famMeans_clineMax <- indPlantData %>% 
-  group_by(Family, Distance_to_core, gmis30) %>% 
+  group_by(Family, Distance_to_core) %>% 
   summarise(clinemax = mean(clinemax, na.rm = TRUE)) 
 
 # Model testing for cline in cline_max
@@ -242,7 +242,7 @@ Anova(pollVisit, type = "III") #Type 3 for interpreting interaction
 seedFlwrFieldData <- read_csv("data-clean/flwrSeedRatio_fieldPlants.csv") %>%
   dplyr::select(-X1, -Comments) %>%
   group_by(Population, Distance_to_core) %>%
-  summarize(count = n(),
+  summarise(count = n(),
             Seeds_per_inf = sum(Num.Seeds) / count,
             Seeds_per_flower = mean(Seeds_per_flower),
             Num_flwrs = mean(Num.Flwrs)) 
@@ -275,11 +275,11 @@ Anova(seedPerInf_mod, type = "III")
 # Means
 seedsPerFlwr %>%
   group_by(source) %>%
-  summarize(mean = mean(Seeds_per_flower))
+  summarise(mean = mean(Seeds_per_flower))
 
 seedsPerFlwr %>%
   group_by(source) %>%
-  summarize(mean = mean(Seeds_per_inf))
+  summarise(mean = mean(Seeds_per_inf))
 
 # Get betas for individual sources
 seedFlwrMods <- seedsPerFlwr %>%
