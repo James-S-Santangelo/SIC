@@ -1,4 +1,6 @@
 # Script to extract impervious surface data (GMIS) from rasters 
+# NOTE: Rasters are not provided in repository but can be downloaded from:
+# https://sedac.ciesin.columbia.edu/data/set/ulandsat-gmis-v1
 
 # Load required packages
 library(tidyverse)

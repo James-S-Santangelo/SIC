@@ -1,3 +1,5 @@
+# Script to clean-up raw individual plant-level data to ready it for analyses
+
 library(tidyverse)
 
 # Load in experimental data from Commond Garden

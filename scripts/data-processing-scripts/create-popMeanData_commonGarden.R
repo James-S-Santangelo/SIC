@@ -1,3 +1,5 @@
+# Script to generat population-mean trait data from family-means
+
 library(tidyverse)
 
 # Load in experimental data on individual plants

@@ -1,3 +1,5 @@
+# Script to generate family-mean trait data from data collected on individual plants
+
 library(tidyverse)
 
 # Load in clean dataset

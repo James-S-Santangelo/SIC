@@ -1,3 +1,5 @@
+# Primary script used in generated all results and figures/tables for the manuscript
+
 # Load require packages
 library(lme4)
 library(lmerTest)

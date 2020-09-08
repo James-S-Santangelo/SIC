@@ -1,4 +1,4 @@
-## FUNCTIONS
+# Functions used to calculate haversine distance between two points on the earth
 
 # Convert degrees to radians
 deg2rad <- function(deg) return(deg*pi/180)

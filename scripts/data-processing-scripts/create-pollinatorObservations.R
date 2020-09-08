@@ -1,3 +1,5 @@
+# Script to clean-up pollinator observation data and ready it for analysis
+
 library(tidyverse)
 
 # Load in pollinator observation data
